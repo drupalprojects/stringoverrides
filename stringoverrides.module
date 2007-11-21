@@ -70,7 +70,7 @@ function stringoverrides_admin() {
   );
   
   for ($delta = 0; $delta < 3; $delta++) {
-    $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo();
+    $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo($delta);
   }
   $form['stringoverrides_wrapper']['more_strings'] = array(
     '#type' => 'submit',
@@ -171,10 +171,10 @@ function theme_stringoverrides_strings($form) {
  * Menu callback for the String Overrides module to display a new string override
  */
 function stringoverrides_js() {
-  //$delta = count($_POST['string']);
+  $delta = count($_POST['string']);
   
   $form_state = array('submitted' => FALSE);
-  $form = stringoverrides_textbox_combo($delta);
+  $form[$delta] = stringoverrides_textbox_combo($delta);
   //$form['#post'] = $_POST;
   $form['#programmed'] = FALSE;
   
