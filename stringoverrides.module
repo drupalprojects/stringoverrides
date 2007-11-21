@@ -1,0 +1,104 @@
+<?php
+// $Id$
+
+/**
+ * Display help information for the String Overrides module
+ * @param path which path of the site we're displaying help
+ * @param arg array that holds the current path as would be returned from arg() function
+ * @return help text for the path
+ */
+function stringoverrides_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case "admin/help#swappy":
+      $output = '<p>'.  t("Provides a quick and easy way of replacing text.") .'</p>';
+      break;
+  }
+  return $output;
+} // function stringoverrides_help
+
+/**
+ * Menu hook for the String Overrides module
+ */ 
+function stringoverrides_menu() {
+  $items = array();
+  $items['admin/settings/stringoverrides'] = array(
+    'title' => 'String overrides',
+    'description' => 'Provides a quick and easy way of replacing text on the site.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('stringoverrides_admin'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/settings/stringoverrides/js'] = array(
+    'title' => 'String Overrides Javascript',
+    'page callback' => 'stringoverrides_js',
+    'page arguments' => array('swappy_admin'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+} // function stringoverrides_menu
+
+/**
+ * Menu callback for the String Overrides module to display its administration
+ */
+function stringoverrides_admin() {
+  $form['stringoverrides_wrapper'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="stringoverrides-wrapper">',
+    '#suffix' => '</div>',
+    'contents' => stringoverrides_textbox_combo(),
+    '#weight' => 1,
+  );
+  $form['stringoverrides_more'] = array(
+    '#type' => 'button',
+    '#value' => t('More strings'),
+    '#weight' => 2,
+    '#ahah' => array(
+      'path' => 'admin/settings/stringoverrides/js',
+      'wrapper' => 'stringoverrides-wrapper',
+      'method' => 'append',
+      'effect' => 'slide',
+      'event' => 'click',
+    ),
+  );
+  $form['stringoverrides_save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+    '#weight' => 3,
+  );
+  return $form;
+} // function stringoverrides_admin
+
+/**
+ * Triggered when the user submits the administration page
+ */ 
+function stringoverrides_admin_submit($form, &$form_state) {
+  dvm($form_state['values']);
+  drupal_set_message('Your changes have been saved... NOT!');
+}
+
+/**
+ * Function to return a textbox combo form
+ */ 
+function stringoverrides_textbox_combo($delta = 0) {
+  $form['stringoverrides_original'][$delta] = array(
+    '#type' => 'textfield',
+    '#title' => 'Original',
+  );
+  $form['stringoverrides_replacement'][$delta] = array(
+    '#type' => 'textfield',
+    '#title' => 'Replacement',
+  );
+  return $form;
+}
+
+/**
+ * Menu callback for the String Overrides module to display a new string override
+ */
+function stringoverrides_js() {
+  $delta = count($_POST['count']);
+  $form = stringoverrides_textbox_combo($delta);
+  $data = drupal_render_form('stringoverrides_form', $form);
+  drupal_json(array('status' => TRUE, 'data' => $data));
+}
