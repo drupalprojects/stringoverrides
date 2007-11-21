@@ -16,10 +16,14 @@ function stringoverrides_schema() {
     'fields' => array(
       'sid' => array(
         'description' => t('Primary Key: Unique string ID.'),
+        'type' => 'serial',
+      ),
+      'enabled' => array(
+        'description' => 'Whether or not this override is enabled.',
         'type' => 'int',
+        'default' => 0,
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'default' => 0,
       ),
       'original' => array(
         'description' => 'The original string to replace.',

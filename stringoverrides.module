@@ -10,8 +10,11 @@
 function stringoverrides_help($path, $arg) {
   $output = '';
   switch ($path) {
-    case "admin/help#swappy":
-      $output = '<p>'.  t("Provides a quick and easy way of replacing text.") .'</p>';
+    case 'admin/help#stringoverrides':
+      $output = '<p>'.  t("The String Overrides module provides a quick and easy way of replacing text.") .'</p>';
+      break;
+    case 'admin/settings/stringoverrides':
+      $output = '<p>'.  t("The following provides quick and easy way of replacing text.") .'</p>';
       break;
   }
   return $output;
@@ -33,36 +36,57 @@ function stringoverrides_menu() {
   $items['admin/settings/stringoverrides/js'] = array(
     'title' => 'String Overrides Javascript',
     'page callback' => 'stringoverrides_js',
-    'page arguments' => array('swappy_admin'),
     'type' => MENU_CALLBACK,
   );
   return $items;
 } // function stringoverrides_menu
 
 /**
+ * Implementation of hook_theme()
+ */
+function stringoverrides_theme() {
+  return array(
+    'stringoverrides_strings' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+/**
  * Menu callback for the String Overrides module to display its administration
  */
 function stringoverrides_admin() {
   $form['stringoverrides_wrapper'] = array(
-    '#type' => 'markup',
+    '#tree' => FALSE,
+    '#weight' => -4,
     '#prefix' => '<div id="stringoverrides-wrapper">',
     '#suffix' => '</div>',
-    'contents' => stringoverrides_textbox_combo(),
-    '#weight' => 1,
   );
-  $form['stringoverrides_more'] = array(
-    '#type' => 'button',
+  $form['stringoverrides_wrapper']['string'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="stringoverrides-wrapper-string">',
+    '#suffix' => '</div>',
+    '#theme' => 'stringoverrides_strings',
+  );
+  
+  for ($delta = 0; $delta < 3; $delta++) {
+    $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo();
+  }
+  $form['stringoverrides_wrapper']['more_strings'] = array(
+    '#type' => 'submit',
     '#value' => t('More strings'),
+    '#description' => t("If the amount of boxes above isn't enough, click here to add more choices."),
+    '#submit' => array('stringoverrides_more_strings_submit'), // If no javascript action.
     '#weight' => 2,
     '#ahah' => array(
       'path' => 'admin/settings/stringoverrides/js',
-      'wrapper' => 'stringoverrides-wrapper',
+      'wrapper' => 'stringoverrides-wrapper-string',
       'method' => 'append',
-      'effect' => 'slide',
+      'effect' => 'fade',
       'event' => 'click',
     ),
   );
-  $form['stringoverrides_save'] = array(
+  $form['stringoverrides_wrapper']['save'] = array(
     '#type' => 'submit',
     '#value' => t('Save configuration'),
     '#weight' => 3,
@@ -79,26 +103,82 @@ function stringoverrides_admin_submit($form, &$form_state) {
 }
 
 /**
+ * Triggered when the user clicks "More strings" and doesn't have javascript
+ */ 
+function stringoverrides_more_strings_submit($form, &$form_state) {
+  // Save the values
+  stringoverrides_admin_submit($form, $form_state);
+
+  // Tell it to create more form elements
+  if ($form_state['values']['more_strings']) {
+    $form_state['string_count'] = count($form_state['values']['choice']) + 5;
+  }
+}
+
+/**
  * Function to return a textbox combo form
  */ 
-function stringoverrides_textbox_combo($delta = 0) {
-  $form['stringoverrides_original'][$delta] = array(
-    '#type' => 'textfield',
-    '#title' => 'Original',
+function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = '', $replacement = '') {
+  $form = array(
+    '#tree' => TRUE,
   );
-  $form['stringoverrides_replacement'][$delta] = array(
+  $form['enabled'] = array(
+    '#type' => 'checkbox', 
+    '#default_value' => $enabled,
+    '#parents' => array('string', $delta, 'enabled'),
+  );
+  $form['original'] = array(
     '#type' => 'textfield',
-    '#title' => 'Replacement',
+    '#default_value' => $original,
+    '#size' => 30,
+    '#parents' => array('string', $delta, 'original'),
+  );
+  $form['replacement'] = array(
+    '#type' => 'textfield',
+    '#default_value' => $replacement,
+    '#size' => 30,
+    '#parents' => array('string', $delta, 'replacement'),
   );
   return $form;
+}
+
+/**
+ * Theme the enabled box and the two text box strings
+ */
+function theme_stringoverrides_strings($form) {
+  $headers = array(
+    theme('table_select_header_cell'),
+    t('Original'),
+    t('Replacement'),
+  );
+  $rows = array();
+  foreach (element_children($form) as $key) {
+    // Build the table row.
+    $rows[] = array(
+      'data' => array(
+        array('data' => drupal_render($form[$key]['enabled']), 'class' => 'stringoverrides-enabled'),
+        array('data' => drupal_render($form[$key]['original']), 'class' => 'stringoverrides-original'),
+        array('data' => drupal_render($form[$key]['replacement']), 'class' => 'stringoverrides-replacement'),
+      ),
+    );
+  }
+  $output = theme('table', $headers, $rows);
+  $output .= drupal_render($form);
+  return $output;
 }
 
 /**
  * Menu callback for the String Overrides module to display a new string override
  */
 function stringoverrides_js() {
-  $delta = count($_POST['count']);
+  //$delta = count($_POST['string']);
+  
+  $form_state = array('submitted' => FALSE);
   $form = stringoverrides_textbox_combo($delta);
-  $data = drupal_render_form('stringoverrides_form', $form);
+  //$form['#post'] = $_POST;
+  $form['#programmed'] = FALSE;
+  
+  $form = form_builder('stringoverrides_form', $form, $form_state);
+  $data = drupal_render($form);
   drupal_json(array('status' => TRUE, 'data' => $data));
 }
