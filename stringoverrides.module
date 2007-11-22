@@ -43,11 +43,31 @@ function stringoverrides_menu() {
  */
 function stringoverrides_init() {
   global $conf;
-  $result = db_query("SELECT original, replacement FROM {stringoverrides} WHERE enabled = 1");
-  while ($string = db_fetch_object($result)) {
-    $conf['locale_custom_strings_en'][$string->original] = $string->replacement;
-  }
+  $strings = _stringoverrides_get_overrides();
+  $conf['locale_custom_strings_en'] = $strings;
 } // function hook_init()
+
+/**
+ * Gets all enabled string overrides
+ */ 
+function _stringoverrides_get_overrides() {
+  static $stringoverrides = NULL;
+  if ($stringoverrides === NULL) {
+    $stringoverrides = cache_get('stringoverrides');
+    if ($stringoverrides) {
+      $stringoverrides = $stringoverrides->data;
+    }
+    else {
+      $stringoverrides = array();
+      $result = db_query('SELECT original, replacement FROM {stringoverrides} WHERE enabled = %d', 1);
+      while ($string = db_fetch_object($result)) {
+        $stringoverrides[$string->original] = $string->replacement;
+      }
+      cache_set('stringoverrides', $stringoverrides);
+    }
+  }
+  return $stringoverrides;
+}
 
 /**
  * Implementation of hook_theme()
@@ -119,10 +139,10 @@ function stringoverrides_admin() {
 function stringoverrides_admin_submit($form, &$form_state) {
   // Remove old values
   db_query('DELETE FROM {stringoverrides}');
+  cache_clear_all('stringoverrides', 'cache');
   
   // Add all new values
   foreach ($form_state['values']['string'] as $index => $value) {
-    dvm($value);
     if (!empty($value->original)) {
       db_query('INSERT INTO {stringoverrides} (enabled, original, replacement) VALUES (%d, "%s", "%s")', $value['enabled'], $value['original'], $value['replacement']);
     }
