@@ -6,13 +6,11 @@
  */
 function stringoverrides_help($path, $arg) {
   $output = '';
-  switch ($path) {
-    case 'admin/help#stringoverrides':
-      $output = '<p>'.  t("The String Overrides module provides a quick and easy way of replacing text.") .'</p>';
-      break;
-    case 'admin/settings/stringoverrides':
-      $output = '<p>'.  t("The following provides quick and easy way of replacing text.") .'</p>';
-      break;
+  if ($path == 'admin/help#stringoverrides') {
+    $output = '<p>'.  t('The String Overrides module provides a quick and easy way of replacing text.') .'</p>';
+  }
+  else if($arg[0] == 'admin' && $arg[1] == 'settings' && $arg[2] == 'stringoverrides') {
+    $output = '<p>'.  t("The following provides quick and easy way of replacing text.") .'</p>';
   }
   return $output;
 } // function stringoverrides_help
@@ -26,10 +24,24 @@ function stringoverrides_menu() {
     'title' => 'String overrides',
     'description' => 'Provides a quick and easy way of replacing text on the site.',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('stringoverrides_admin'),
+    'page arguments' => array('stringoverrides_admin', 3),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
   );
+  
+  // Add the language tabs if there are other languages
+  if (module_exists('locale')) {
+    global $language;
+    $languages = locale_language_list();
+    foreach($languages as $code => $name) {
+      $items["admin/settings/stringoverrides/$code"] = array(
+        'title' => $name,
+        'page arguments' => array('stringoverrides_admin', $code),
+        'type' => $language->language == $code ? MENU_DEFAULT_LOCAL_TASK : MENU_LOCAL_TASK,
+      );
+    }
+  }
+  
   $items['admin/settings/stringoverrides/js'] = array(
     'title' => 'String Overrides Javascript',
     'page callback' => 'stringoverrides_js',
@@ -37,37 +49,6 @@ function stringoverrides_menu() {
   );
   return $items;
 } // function stringoverrides_menu
-
-/**
- * Implementation of hook_init()
- */
-function stringoverrides_init() {
-  global $conf;
-  $strings = _stringoverrides_get_overrides();
-  $conf['locale_custom_strings_en'] = $strings;
-} // function hook_init()
-
-/**
- * Gets all enabled string overrides
- */ 
-function _stringoverrides_get_overrides() {
-  static $stringoverrides = NULL;
-  if ($stringoverrides === NULL) {
-    $stringoverrides = cache_get('stringoverrides');
-    if ($stringoverrides) {
-      $stringoverrides = $stringoverrides->data;
-    }
-    else {
-      $stringoverrides = array();
-      $result = db_query('SELECT original, replacement FROM {stringoverrides} WHERE enabled = %d', 1);
-      while ($string = db_fetch_object($result)) {
-        $stringoverrides[$string->original] = $string->replacement;
-      }
-      cache_set('stringoverrides', $stringoverrides);
-    }
-  }
-  return $stringoverrides;
-}
 
 /**
  * Implementation of hook_theme()
@@ -83,7 +64,16 @@ function stringoverrides_theme() {
 /**
  * Menu callback for the String Overrides module to display its administration
  */
-function stringoverrides_admin() {
+function stringoverrides_admin($form = NULL, $lang = NULL) {
+  // See which language we're modifying
+  if (empty($lang)) {
+    global $language;
+    $lang = $language->language;
+  }
+  $form['lang'] = array(
+    '#type' => 'hidden',
+    '#value' => $lang,
+  );
   $form['stringoverrides_wrapper'] = array(
     '#tree' => FALSE,
     '#weight' => -4,
@@ -97,20 +87,19 @@ function stringoverrides_admin() {
     '#theme' => 'stringoverrides_strings',
   );
   
+  // Retrieve the words to display
   $delta = 0;
-  $result = db_query("SELECT enabled, original, replacement FROM {stringoverrides} ORDER BY original");
-  while ($string = db_fetch_object($result)) {
-    $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo($delta, $string->enabled, $string->original, $string->replacement);
+  $words = variable_get('locale_custom_strings_'. $lang, array());
+  uksort($words, 'strcasecmp'); // Case insensitive sort by key
+  foreach($words as $original => $replacement){
+    $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo($delta, TRUE, $original, $replacement);
     $delta++;
   }
-  for ($index = 0; $index < 2; $index++) {
+  for ($index = 0; $index < 3; $index++) {
     $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo($delta);
     $delta++;
   }
   
-  //for ($delta = 0; $delta < 3; $delta++) {
-    $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo($delta);
-  //}
   $form['stringoverrides_wrapper']['more_strings'] = array(
     '#type' => 'submit',
     '#value' => t('More strings'),
@@ -137,16 +126,21 @@ function stringoverrides_admin() {
  * Triggered when the user submits the administration page
  */ 
 function stringoverrides_admin_submit($form, &$form_state) {
-  // Remove old values
-  db_query('DELETE FROM {stringoverrides}');
-  cache_clear_all('stringoverrides', 'cache');
-  
-  // Add all new values
+  // Format the words correctly so that they're put into the database correctly
+  $words = array();
   foreach ($form_state['values']['string'] as $index => $value) {
-    if (!empty($value->original)) {
-      db_query('INSERT INTO {stringoverrides} (enabled, original, replacement) VALUES (%d, "%s", "%s")', $value['enabled'], $value['original'], $value['replacement']);
+    if (!empty($value['original']) && $value['enabled']) {
+      $words[$value['original']] = $value['replacement'];
     }
   }
+  
+  // Save into the correct language definition
+  global $language;
+  $lang = $form['lang']['#value'];
+  if (empty($lang)) {
+    $lang = $language->language;
+  }
+  variable_set('locale_custom_strings_'. $lang, $words);
   
   // Output a message to the user
   drupal_set_message('Your changes have been saved.');
@@ -154,7 +148,7 @@ function stringoverrides_admin_submit($form, &$form_state) {
 
 /**
  * Triggered when the user clicks "More strings" and doesn't have javascript
- */ 
+ */
 function stringoverrides_more_strings_submit($form, &$form_state) {
   // Save the values
   stringoverrides_admin_submit($form, $form_state);
