@@ -56,3 +56,14 @@ function stringoverrides_menu() {
   );
   return $items;
 } // function stringoverrides_menu
+
+/**
+ * Implementation of hook_theme()
+ */
+function stringoverrides_theme() {
+  return array(
+    'stringoverrides_strings' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+} // function stringoverrides_theme

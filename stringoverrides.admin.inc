@@ -7,17 +7,6 @@
  */
 
 /**
- * Implementation of hook_theme()
- */
-function stringoverrides_theme() {
-  return array(
-    'stringoverrides_strings' => array(
-      'arguments' => array('form' => NULL),
-    ),
-  );
-} // function hook_theme()
-
-/**
  * Menu callback for the String Overrides module to display its administration
  */
 function stringoverrides_admin($form = NULL, $lang = NULL) {
@@ -72,7 +61,7 @@ function stringoverrides_admin($form = NULL, $lang = NULL) {
   );
   $form['stringoverrides_wrapper']['save'] = array(
     '#type' => 'submit',
-    '#value' => t('Save configuration'),
+    '#value' => t('Save'),
     '#weight' => 3,
   );
   return $form;
