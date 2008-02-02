@@ -9,12 +9,12 @@
 /**
  * Implementation of hook_help()
  */
-function stringoverrides_help($path, $arg) {
+function stringoverrides_help($path) {
   $output = '';
   if ($path == 'admin/help#stringoverrides') {
     $output = '<p>'.  t('The String Overrides module provides a quick and easy way of replacing text.') .'</p>';
   }
-  else if($arg[0] == 'admin' && $arg[1] == 'settings' && $arg[2] == 'stringoverrides') {
+  else if(arg(0) == 'admin' && arg(1) == 'settings' && arg(2) == 'stringoverrides') {
     $output = '<p>'.  t("The following provides quick and easy way of replacing text.") .'</p>';
   }
   return $output;
@@ -23,47 +23,55 @@ function stringoverrides_help($path, $arg) {
 /**
  * Implementation of hook_menu()
  */
-function stringoverrides_menu() {
+function stringoverrides_menu($may_cache) {
   $items = array();
-  $items['admin/settings/stringoverrides'] = array(
-    'title' => 'String overrides',
-    'description' => 'Provides a quick and easy way of replacing text on the site.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('stringoverrides_admin', 3),
-    'access arguments' => array('administer site configuration'),
-    'type' => MENU_NORMAL_ITEM,
-    'file' => 'stringoverrides.admin.inc',
-  );
-  
-  // Add the language tabs if there are other languages
-  if (module_exists('locale')) {
-    global $language;
-    $languages = locale_language_list();
-    foreach($languages as $code => $name) {
-      $items["admin/settings/stringoverrides/$code"] = array(
-        'title' => $name,
-        'page arguments' => array('stringoverrides_admin', $code),
-        'type' => $language->language == $code ? MENU_DEFAULT_LOCAL_TASK : MENU_LOCAL_TASK,
-      );
-    }
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/settings/stringoverrides',
+      'title' => 'String overrides',
+      'description' => 'Provides a quick and easy way of replacing text on the site.',
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('stringoverrides_admin'),
+      'access' => user_access('administer site configuration'),
+      'type' => MENU_NORMAL_ITEM,
+    );
   }
-  
-  $items['admin/settings/stringoverrides/js'] = array(
-    'title' => 'String Overrides Javascript',
-    'page callback' => 'stringoverrides_js',
-    'type' => MENU_CALLBACK,
-    'file' => 'stringoverrides.admin.inc',
-  );
+  elseif (strpos($_GET['q'], 'admin/settings/stringoverrides') === 0) {
+    include_once(drupal_get_path('module', 'stringoverrides') .'/stringoverrides.admin.inc');
+  }
+
   return $items;
 } // function stringoverrides_menu
 
 /**
- * Implementation of hook_theme()
+ * Check that locale module is disabled before enabling this module.
  */
-function stringoverrides_theme() {
-  return array(
-    'stringoverrides_strings' => array(
-      'arguments' => array('form' => NULL),
-    ),
-  );
-} // function stringoverrides_theme
+function stringoverrides_enable() {
+  if (module_exists('locale')) {
+  	drupal_set_message(t('String overrides module is not compatible with Locale module. Please disable it before using String overrides.'), 'error');
+    module_disable(array('stringoverrides'));
+  }
+}
+
+/**
+ * Fake the locale function.
+ */
+if (!function_exists('locale')) {
+  function locale_supported_languages($reset = FALSE, $getall = FALSE) {
+    return array(
+      'name' => array('xx' => 'String Overrides'),
+      'formula' => array('xx' => ''),
+    );
+  }
+
+	function locale($string) {
+    static $strings = array();
+    $strings = variable_get('locale_custom_strings_en', array());
+    if ($strings[$string]) {
+    	return $strings[$string];
+    }
+    else {
+    	return $string;
+    }
+	}
+}

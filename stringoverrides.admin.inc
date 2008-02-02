@@ -9,16 +9,8 @@
 /**
  * Menu callback for the String Overrides module to display its administration
  */
-function stringoverrides_admin($form = NULL, $lang = NULL) {
-  // See which language we're modifying
-  if (empty($lang)) {
-    global $language;
-    $lang = $language->language;
-  }
-  $form['lang'] = array(
-    '#type' => 'hidden',
-    '#value' => $lang,
-  );
+function stringoverrides_admin() {
+  $form = array();
   $form['stringoverrides_wrapper'] = array(
     '#tree' => FALSE,
     '#weight' => -4,
@@ -34,7 +26,7 @@ function stringoverrides_admin($form = NULL, $lang = NULL) {
   
   // Retrieve the words to display
   $delta = 0;
-  $words = variable_get('locale_custom_strings_'. $lang, array());
+  $words = variable_get('locale_custom_strings_en', array());
   uksort($words, 'strcasecmp'); // Case insensitive sort by key
   foreach($words as $original => $replacement){
     $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo($delta, TRUE, $original, $replacement);
@@ -45,20 +37,6 @@ function stringoverrides_admin($form = NULL, $lang = NULL) {
     $delta++;
   }
   
-  $form['stringoverrides_wrapper']['more_strings'] = array(
-    '#type' => 'submit',
-    '#value' => t('More strings'),
-    '#description' => t("If the amount of boxes above isn't enough, click here to add more choices."),
-    '#submit' => array('stringoverrides_more_strings_submit'), // If no javascript action.
-    '#weight' => 2,
-    '#ahah' => array(
-      'path' => 'admin/settings/stringoverrides/js',
-      'wrapper' => 'stringoverrides-wrapper-string',
-      'method' => 'append',
-      'effect' => 'fade',
-      'event' => 'click',
-    ),
-  );
   $form['stringoverrides_wrapper']['save'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
@@ -70,39 +48,21 @@ function stringoverrides_admin($form = NULL, $lang = NULL) {
 /**
  * Triggered when the user submits the administration page
  */ 
-function stringoverrides_admin_submit($form, &$form_state) {
+function stringoverrides_admin_submit($form_id, $form_values) {
   // Format the words correctly so that they're put into the database correctly
   $words = array();
-  foreach ($form_state['values']['string'] as $index => $value) {
+  foreach ($form_values['string'] as $index => $value) {
     if (!empty($value['original']) && $value['enabled']) {
       $words[$value['original']] = $value['replacement'];
     }
   }
   
-  // Save into the correct language definition
-  global $language;
-  $lang = $form['lang']['#value'];
-  if (empty($lang)) {
-    $lang = $language->language;
-  }
-  variable_set('locale_custom_strings_'. $lang, $words);
+  // Save into the English language definition
+  variable_set('locale_custom_strings_en', $words);
   
   // Output a message to the user
   drupal_set_message('Your changes have been saved.');
 } // function stringoverrides_admin_submit()
-
-/**
- * Triggered when the user clicks "More strings" and doesn't have javascript
- */
-function stringoverrides_more_strings_submit($form, &$form_state) {
-  // Save the values
-  stringoverrides_admin_submit($form, $form_state);
-
-  // Tell it to create more form elements
-  if ($form_state['values']['more_strings']) {
-    $form_state['string_count'] = count($form_state['values']['choice']) + 5;
-  }
-} // function stringoverrides_more_strings_submit()
 
 /**
  * Function to return a textbox combo form
@@ -155,19 +115,3 @@ function theme_stringoverrides_strings($form) {
   $output .= drupal_render($form);
   return $output;
 } // function theme_stringoverrides_strings()
-
-/**
- * Menu callback for the String Overrides module to display a new string override
- */
-function stringoverrides_js() {
-  $delta = count($_POST['string']);
-  
-  $form_state = array('submitted' => FALSE);
-  $form[$delta] = stringoverrides_textbox_combo($delta);
-  $form['#post'] = $_POST;
-  $form['#programmed'] = FALSE;
-  
-  $form = form_builder('stringoverrides_form', $form, $form_state);
-  $data = drupal_render($form);
-  drupal_json(array('status' => TRUE, 'data' => $data));
-} // function stringoverrides_js()
