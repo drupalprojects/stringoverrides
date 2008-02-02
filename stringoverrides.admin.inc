@@ -11,33 +11,23 @@
  */
 function stringoverrides_admin() {
   $form = array();
-  $form['stringoverrides_wrapper'] = array(
-    '#tree' => FALSE,
-    '#weight' => -4,
-    '#prefix' => '<div id="stringoverrides-wrapper">',
-    '#suffix' => '</div>',
-  );
-  $form['stringoverrides_wrapper']['string'] = array(
-    '#type' => 'markup',
-    '#prefix' => '<div id="stringoverrides-wrapper-string">',
-    '#suffix' => '</div>',
+  $form['string'] = array(
     '#theme' => 'stringoverrides_strings',
   );
-  
   // Retrieve the words to display
   $delta = 0;
   $words = variable_get('locale_custom_strings_en', array());
   uksort($words, 'strcasecmp'); // Case insensitive sort by key
   foreach($words as $original => $replacement){
-    $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo($delta, TRUE, $original, $replacement);
+    $form['string'][$delta] = stringoverrides_textbox_combo($delta, TRUE, $original, $replacement);
     $delta++;
   }
   for ($index = 0; $index < 3; $index++) {
-    $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo($delta);
+    $form['string'][$delta] = stringoverrides_textbox_combo($delta);
     $delta++;
   }
   
-  $form['stringoverrides_wrapper']['save'] = array(
+  $form['save'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
     '#weight' => 3,
@@ -103,15 +93,23 @@ function theme_stringoverrides_strings($form) {
   $rows = array();
   foreach (element_children($form) as $key) {
     // Build the table row.
-    $rows[] = array(
+    $rows[$key] = array(
       'data' => array(
         array('data' => drupal_render($form[$key]['enabled']), 'class' => 'stringoverrides-enabled'),
         array('data' => drupal_render($form[$key]['original']), 'class' => 'stringoverrides-original'),
         array('data' => drupal_render($form[$key]['replacement']), 'class' => 'stringoverrides-replacement'),
       ),
     );
+    // Add any attributes on the element to the row, such as the ahah class.
+    if ($form[$key]['#attributes']) {
+      $rows[$key] = array_merge($rows[$key], $form[$key]['#attributes']);
+    }
   }
-  $output = theme('table', $headers, $rows);
+
+  $output  = '';
+  $output .= '<div id="stringoverrides-wrapper">';
+  $output .= theme('table', $headers, $rows);
+  $output .= '</div>';
   $output .= drupal_render($form);
   return $output;
 } // function theme_stringoverrides_strings()
