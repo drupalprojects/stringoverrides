@@ -9,57 +9,54 @@
 /**
  * Menu callback for the String Overrides module to display its administration
  */
-function stringoverrides_admin($form = NULL, $lang = NULL) {
+function stringoverrides_admin($form_state = NULL, $lang = NULL) {
   // See which language we're modifying
   if (empty($lang)) {
     global $language;
     $lang = $language->language;
   }
+  $form = array(
+    '#cache' => TRUE,
+  );
   $form['lang'] = array(
     '#type' => 'hidden',
     '#value' => $lang,
   );
-  $form['stringoverrides_wrapper'] = array(
-    '#tree' => FALSE,
-    '#weight' => -4,
-    '#prefix' => '<div id="stringoverrides-wrapper">',
-    '#suffix' => '</div>',
-  );
-  $form['stringoverrides_wrapper']['string'] = array(
-    '#type' => 'markup',
-    '#prefix' => '<div id="stringoverrides-wrapper-string">',
-    '#suffix' => '</div>',
+  $form['string'] = array(
     '#theme' => 'stringoverrides_strings',
   );
-  
   // Retrieve the words to display
   $delta = 0;
-  $words = variable_get('locale_custom_strings_'. $lang, array());
+  if ($form_state['storage']['words']) {
+    $words = $form_state['storage']['words'];
+  }
+  else {
+    $words = variable_get('locale_custom_strings_'. $lang, array());
+  }
   uksort($words, 'strcasecmp'); // Case insensitive sort by key
   foreach($words as $original => $replacement){
-    $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo($delta, TRUE, $original, $replacement);
+    $form['string'][$delta] = stringoverrides_textbox_combo($delta, TRUE, $original, $replacement);
     $delta++;
   }
   for ($index = 0; $index < 3; $index++) {
-    $form['stringoverrides_wrapper']['string'][$delta] = stringoverrides_textbox_combo($delta);
+    $form['string'][$delta] = stringoverrides_textbox_combo($delta);
     $delta++;
   }
   
-  $form['stringoverrides_wrapper']['more_strings'] = array(
-    '#type' => 'submit',
+  $form['more_strings'] = array(
+    '#type' => 'button',
     '#value' => t('More strings'),
     '#description' => t("If the amount of boxes above isn't enough, click here to add more choices."),
-    '#submit' => array('stringoverrides_more_strings_submit'), // If no javascript action.
     '#weight' => 2,
     '#ahah' => array(
       'path' => 'admin/settings/stringoverrides/js',
-      'wrapper' => 'stringoverrides-wrapper-string',
-      'method' => 'append',
+      'wrapper' => 'stringoverrides-wrapper',
+      'method' => 'replace',
       'effect' => 'fade',
-      'event' => 'click',
+      'progress' => 'none',
     ),
   );
-  $form['stringoverrides_wrapper']['save'] = array(
+  $form['save'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
     '#weight' => 3,
@@ -90,19 +87,6 @@ function stringoverrides_admin_submit($form, &$form_state) {
   // Output a message to the user
   drupal_set_message('Your changes have been saved.');
 } // function stringoverrides_admin_submit()
-
-/**
- * Triggered when the user clicks "More strings" and doesn't have javascript
- */
-function stringoverrides_more_strings_submit($form, &$form_state) {
-  // Save the values
-  stringoverrides_admin_submit($form, $form_state);
-
-  // Tell it to create more form elements
-  if ($form_state['values']['more_strings']) {
-    $form_state['string_count'] = count($form_state['values']['choice']) + 5;
-  }
-} // function stringoverrides_more_strings_submit()
 
 /**
  * Function to return a textbox combo form
@@ -143,15 +127,23 @@ function theme_stringoverrides_strings($form) {
   $rows = array();
   foreach (element_children($form) as $key) {
     // Build the table row.
-    $rows[] = array(
+    $rows[$key] = array(
       'data' => array(
         array('data' => drupal_render($form[$key]['enabled']), 'class' => 'stringoverrides-enabled'),
         array('data' => drupal_render($form[$key]['original']), 'class' => 'stringoverrides-original'),
         array('data' => drupal_render($form[$key]['replacement']), 'class' => 'stringoverrides-replacement'),
       ),
     );
+    // Add any attributes on the element to the row, such as the ahah class.
+    if (array_key_exists('#attributes', $form[$key])) {
+      $rows[$key] = array_merge($rows[$key], $form[$key]['#attributes']);
+    }
   }
-  $output = theme('table', $headers, $rows);
+
+  $output  = '';
+  $output .= '<div id="stringoverrides-wrapper">';
+  $output .= theme('table', $headers, $rows);
+  $output .= '</div>';
   $output .= drupal_render($form);
   return $output;
 } // function theme_stringoverrides_strings()
@@ -161,13 +153,33 @@ function theme_stringoverrides_strings($form) {
  */
 function stringoverrides_js() {
   $delta = count($_POST['string']);
-  
+
+  // Build our new form element.
+  $form_element = stringoverrides_textbox_combo($delta);
+  drupal_alter('form', $form_element, array(), 'stringoverrides_js');
+
+  // Build the new form.
   $form_state = array('submitted' => FALSE);
-  $form[$delta] = stringoverrides_textbox_combo($delta);
-  $form['#post'] = $_POST;
-  $form['#programmed'] = FALSE;
-  
-  $form = form_builder('stringoverrides_form', $form, $form_state);
-  $data = drupal_render($form);
-  drupal_json(array('status' => TRUE, 'data' => $data));
+  $form_build_id = $_POST['form_build_id'];
+  // Add the new element to the stored form. Without adding the element to the
+  // form, Drupal is not aware of this new elements existence and will not
+  // process it. We retreive the cached form, add the element, and resave.
+  $form = form_get_cache($form_build_id, $form_state);
+  $form['string'][$delta] = $form_element;
+  form_set_cache($form_build_id, $form, $form_state);
+  $form += array(
+    '#post' => $_POST,
+    '#programmed' => FALSE,
+  );
+
+  // Rebuild the form.
+  $form = form_builder('stringoverrides_admin', $form, $form_state);
+
+  // Render the new output.
+  $string_form = $form['string'];
+  $string_form[$delta]['enabled']['#value'] = TRUE;
+  $string_form[$delta]['#attributes']['class'] = empty($string_form[$delta]['#attributes']['class']) ? 'ahah-new-content' : $string_form[$delta]['#attributes']['class'] .' ahah-new-content';
+  $output = theme('status_messages') . drupal_render($string_form);
+
+  drupal_json(array('status' => TRUE, 'data' => $output));
 } // function stringoverrides_js()
