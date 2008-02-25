@@ -67,7 +67,7 @@ if (!function_exists('locale')) {
 	function locale($string) {
     static $strings = array();
     $strings = variable_get('locale_custom_strings_en', array());
-    if ($strings[$string]) {
+    if (isset($strings[$string])) {
     	return $strings[$string];
     }
     else {
