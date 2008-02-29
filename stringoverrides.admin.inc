@@ -101,15 +101,15 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
     '#parents' => array('string', $delta, 'enabled'),
   );
   $form['original'] = array(
-    '#type' => 'textfield',
+    '#type' => 'textarea',
     '#default_value' => $original,
-    '#size' => 30,
+    '#rows' => 1,
     '#parents' => array('string', $delta, 'original'),
   );
   $form['replacement'] = array(
-    '#type' => 'textfield',
+    '#type' => 'textarea',
     '#default_value' => $replacement,
-    '#size' => 30,
+    '#rows' => 1,
     '#parents' => array('string', $delta, 'replacement'),
   );
   return $form;
@@ -119,6 +119,8 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
  * Theme the enabled box and the two text box strings
  */
 function theme_stringoverrides_strings($form) {
+  drupal_add_css(drupal_get_path('module', 'stringoverrides') .'/stringoverrides.css', 'module', NULL, NULL, FALSE);
+  
   $headers = array(
     theme('table_select_header_cell'),
     t('Original'),
