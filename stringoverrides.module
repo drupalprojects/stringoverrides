@@ -12,13 +12,23 @@
 function stringoverrides_help($path, $arg) {
   $output = '';
   if ($path == 'admin/help#stringoverrides') {
-    $output = '<p>'.  t('The String Overrides module provides a quick and easy way of replacing text.') .'</p>';
+    $output = '<p>'. t('The <strong>String Overrides</strong> module provides a quick and easy way of replacing text.') .'</p>';
+    $output .= '<p>'. t('To replace a string, enter what you find when the string is passed through the <a href="@t">t()</a> function. String Overrides cannot translate user-defined content, it can only replace strings wrapped in the t() function. To find the strings you can actually change, open up a module and look for t() function calls. Places where %, @, or ! are used means that the translation contains dynamic information (such as the node type or title in the above examples), these are not translated while the text around them are.', array('@t' => 'http://api.drupal.org/api/function/t')) .'</p>';
+    $output .= '<p>'. t('For example:') .'</p>';
+    $output .= theme('item_list', array('The %post has been updated.', 'Are you sure you want to delete %title?', 'Screenshot for %theme theme'));
   }
   else if($arg[0] == 'admin' && $arg[1] == 'settings' && $arg[2] == 'stringoverrides') {
-    $output = '<p>'.  t("The following provides quick and easy way of replacing text.") .'</p>';
+    $output = '<p>'.  t('The following provides quick and easy way of replacing text.') .'</p>';
   }
   return $output;
 } // function stringoverrides_help
+
+/**
+ * Implementation of hook_perm()
+ */
+function stringoverrides_perm() {
+  return array('administer string overrides');
+} // function stringoverrides_perm
 
 /**
  * Implementation of hook_menu()
@@ -30,7 +40,7 @@ function stringoverrides_menu() {
     'description' => 'Provides a quick and easy way of replacing text on the site.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('stringoverrides_admin', 3),
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer string overrides'),
     'type' => MENU_NORMAL_ITEM,
     'file' => 'stringoverrides.admin.inc',
   );

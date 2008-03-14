@@ -86,7 +86,7 @@ function stringoverrides_admin_submit($form, &$form_state) {
   
   // Output a message to the user
   drupal_set_message('Your changes have been saved.');
-} // function stringoverrides_admin_submit()
+} // function stringoverrides_admin_submit
 
 /**
  * Function to return a textbox combo form
@@ -113,7 +113,7 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
     '#parents' => array('string', $delta, 'replacement'),
   );
   return $form;
-} // function stringoverrides_textbox_combo()
+} // function stringoverrides_textbox_combo
 
 /**
  * Theme the enabled box and the two text box strings
@@ -148,7 +148,7 @@ function theme_stringoverrides_strings($form) {
   $output .= '</div>';
   $output .= drupal_render($form);
   return $output;
-} // function theme_stringoverrides_strings()
+} // function theme_stringoverrides_strings
 
 /**
  * Menu callback for the String Overrides module to display a new string override
@@ -184,4 +184,4 @@ function stringoverrides_js() {
   $output = theme('status_messages') . drupal_render($string_form);
 
   drupal_json(array('status' => TRUE, 'data' => $output));
-} // function stringoverrides_js()
+} // function stringoverrides_js
