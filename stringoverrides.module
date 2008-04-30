@@ -18,7 +18,15 @@ function stringoverrides_help($path) {
     $output .= theme('item_list', array('The %post has been updated.', 'Are you sure you want to delete %title?', 'Screenshot for %theme theme'));
   }
   else if(arg(0) == 'admin' && arg(1) == 'settings' && arg(2) == 'stringoverrides') {
-    $output = '<p>'.  t('The following provides quick and easy way of replacing text.') .'</p>';
+    if (!arg(3) == 'import') {
+      $output = '<p>'. t('Upload a *.po file here to import a collection of strings.') .'</p>';
+    }
+    else if (!arg(3) == 'export') {
+      $output = '<p>'. t('The following is a generated *.po file. You can use this feature to backup the current String Overrides.') .'</p>';
+    }
+    else {
+      $output = '<p>'.  t('The following provides quick and easy way of replacing text.') .'</p>';
+    }
   }
   return $output;
 } // function stringoverrides_help
@@ -44,6 +52,32 @@ function stringoverrides_menu($may_cache) {
       'callback arguments' => array('stringoverrides_admin'),
       'access' => user_access('administer string overrides'),
       'type' => MENU_NORMAL_ITEM,
+    );
+    $items[] = array(
+      'path' => 'admin/settings/stringoverrides/overrides',
+      'title' => t('Overrides'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('stringoverrides_admin'),
+      'access' => user_access('administer string overrides'),
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -10,
+    );
+    $items[] = array(
+      'path' => 'admin/settings/stringoverrides/import',
+      'title' => t('Import'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('stringoverrides_admin_import'),
+      'access' => user_access('administer string overrides'),
+      'type' => MENU_LOCAL_TASK,
+    );
+    $items[] = array(
+      'path' => 'admin/settings/stringoverrides/export',
+      'title' => t('Export'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('stringoverrides_admin_export'),
+      'access' => user_access('administer string overrides'),
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 1,
     );
   }
   elseif (strpos($_GET['q'], 'admin/settings/stringoverrides') === 0) {
@@ -81,7 +115,7 @@ if (!function_exists('locale')) {
     	return $strings[$string];
     }
     else {
-    	return $string;
+      return $string;
     }
 	}
 }

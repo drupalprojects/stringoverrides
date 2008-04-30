@@ -115,3 +115,105 @@ function theme_stringoverrides_strings($form) {
   $output .= drupal_render($form);
   return $output;
 } // function theme_stringoverrides_strings
+
+/**
+ * Menu callback for the String Overrides module to display the import administration
+ */
+function stringoverrides_admin_import() {
+  $form = array();
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
+  $form['file'] = array(
+    '#type' => 'file',
+    '#title' => t('Import *.po File'),
+    '#description' => t('Attach your *.po file here to import the string overrides.'),
+  );
+  $form['import'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import'),
+    '#weight' => 3,
+  );
+  return $form;
+} // function stringoverrides_admin_import
+
+/**
+ * Triggered when the user imports data
+ */
+function stringoverrides_admin_import_submit($form_id, $form_values) {
+  // Check if the file uploaded correctly
+  if ($file = file_check_upload('file')) {
+    $overrides = array();
+  
+    // Start reading the file
+    $handle = @fopen($file->filepath, "r");
+    if ($handle) {
+      $currentoverride = NULL;
+      $currentstring = NULL;
+      $operation = 'msgstr';
+      
+      // Loop through the whole file
+      while (!feof($handle)) {
+        // Retrieve a single line
+        $buffer = trim(fgets($handle));
+        // Skip empty or comment lines
+        if (empty($buffer) || $buffer[0] == '#') {
+          continue;
+        }
+        // Continued string
+        if ($buffer[0] == '"') {
+          // See what we're reading in
+          $string = trim(substr($buffer, 1, -1));
+          if ($operation == 'msgstr' && !empty($string)) {
+            $currentstring .= $string;
+          }
+          else {
+            $currentoverride .= $string;
+          }
+        }
+        else if (substr($buffer, 0, 6) == 'msgstr') {
+          // Retrieve the override string
+          $operation = 'msgstr';
+          $currentstring = substr($buffer, 8, -1);
+        }
+        else if (substr($buffer, 0, 5) == 'msgid') { // New string
+          // Save old string
+          if (!empty($currentstring) && !empty($currentoverride)) {
+            $overrides[$currentoverride] = $currentstring;
+            $currentoverride = $currentstring = '';
+          }
+          // Read what's next
+          $operation = 'msgid';
+          $currentoverride = substr($buffer, 7, -1);
+        }
+      }
+      
+      // Clean up and save the imported data
+      fclose($handle);
+      file_delete($file->filepath);
+      dvm($overrides);
+      variable_set('locale_custom_strings_en', $overrides);
+    }
+  }
+  else {
+    form_set_error('file', t('A file to import is required.'));
+  }
+} // function stringoverrides_admin_import_submit
+
+/**
+ *
+ */
+function stringoverrides_admin_export() {
+  $form = array();
+  
+  $export = '';
+  $overrides = variable_get('locale_custom_strings_en', array());
+  foreach ($overrides as $override => $string) {
+    $export .= 'msgid "'. $override ."\"\nmsgstr \"$string\"\n";
+  }
+  $form['overrides'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Export'),
+    '#default_value' => $export,
+    '#description' => t('This is the generated *.po file.'),
+  );
+  return $form;
+} // function stringoverrides_admin_export
