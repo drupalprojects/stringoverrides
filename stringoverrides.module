@@ -18,10 +18,10 @@ function stringoverrides_help($path) {
     $output .= theme('item_list', array('The %post has been updated.', 'Are you sure you want to delete %title?', 'Screenshot for %theme theme'));
   }
   else if(arg(0) == 'admin' && arg(1) == 'settings' && arg(2) == 'stringoverrides') {
-    if (!arg(3) == 'import') {
+    if (arg(3) == 'import') {
       $output = '<p>'. t('Upload a *.po file here to import a collection of strings.') .'</p>';
     }
-    else if (!arg(3) == 'export') {
+    else if (arg(3) == 'export') {
       $output = '<p>'. t('The following is a generated *.po file. You can use this feature to backup the current String Overrides.') .'</p>';
     }
     else {
