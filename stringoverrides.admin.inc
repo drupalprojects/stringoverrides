@@ -199,7 +199,7 @@ function stringoverrides_admin_import_submit($form_id, $form_values) {
 } // function stringoverrides_admin_import_submit
 
 /**
- *
+ * Ability to export a *.po file.
  */
 function stringoverrides_admin_export() {
   $form = array();

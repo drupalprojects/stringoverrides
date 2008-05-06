@@ -17,7 +17,7 @@ function stringoverrides_help($path) {
     $output .= '<p>'. t('For example:') .'</p>';
     $output .= theme('item_list', array('The %post has been updated.', 'Are you sure you want to delete %title?', 'Screenshot for %theme theme'));
   }
-  else if(arg(0) == 'admin' && arg(1) == 'settings' && arg(2) == 'stringoverrides') {
+  else if (arg(0) == 'admin' && arg(1) == 'settings' && arg(2) == 'stringoverrides') {
     if (arg(3) == 'import') {
       $output = '<p>'. t('Upload a *.po file here to import a collection of strings.') .'</p>';
     }
@@ -33,7 +33,7 @@ function stringoverrides_help($path) {
 
 /**
  * Implementation of hook_perm()
- */ 
+ */
 function stringoverrides_perm() {
   return array('administer string overrides');
 } // function stringoverrides_perm
@@ -92,7 +92,7 @@ function stringoverrides_menu($may_cache) {
  */
 function stringoverrides_enable() {
   if (module_exists('locale')) {
-  	drupal_set_message(t('String overrides module is not compatible with Locale module. Please disable it before using String overrides.'), 'error');
+    drupal_set_message(t('String overrides module is not compatible with Locale module. Please disable it before using String overrides.'), 'error');
     module_disable(array('stringoverrides'));
   }
 } // function stringoverrides_enable
@@ -108,14 +108,14 @@ if (!function_exists('locale')) {
     );
   }
 
-	function locale($string) {
+  function locale($string) {
     static $strings = array();
     $strings = variable_get('locale_custom_strings_en', array());
     if (isset($strings[$string])) {
-    	return $strings[$string];
+      return $strings[$string];
     }
     else {
       return $string;
     }
-	}
+  }
 }
