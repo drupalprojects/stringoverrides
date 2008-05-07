@@ -189,8 +189,8 @@ function stringoverrides_admin_import_submit($form_id, $form_values) {
       // Clean up and save the imported data
       fclose($handle);
       file_delete($file->filepath);
-      dvm($overrides);
       variable_set('locale_custom_strings_en', $overrides);
+      drupal_set_message(t('The overrides have been imported.'));
     }
   }
   else {
