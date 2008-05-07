@@ -1,4 +1,4 @@
-# $Id$
+# $Id: stringoverrides.pot,v 1.1.2.1 2008/03/14 21:21:09 robloach Exp $
 #
 # LANGUAGE translation of Drupal (general)
 # Copyright YEAR NAME <EMAIL@ADDRESS>

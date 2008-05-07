@@ -17,8 +17,24 @@ function stringoverrides_help($path, $arg) {
     $output .= '<p>'. t('For example:') .'</p>';
     $output .= theme('item_list', array('The %post has been updated.', 'Are you sure you want to delete %title?', 'Screenshot for %theme theme'));
   }
-  else if($arg[0] == 'admin' && $arg[1] == 'settings' && $arg[2] == 'stringoverrides') {
-    $output = '<p>'.  t('The following provides quick and easy way of replacing text.') .'</p>';
+  else if ($arg[0] == 'admin' && $arg[1] == 'settings' && $arg[2] == 'stringoverrides') {
+    switch ($arg[3]) {
+    case 'import':
+      $output = '<p>'.  t('Upload a *.po file here to import a collection of strings.') .'</p>';
+    break;
+    case 'export':
+      $output = '<p>'.  t('The following is a generated *.po file. You can use this feature to backup the current String Overrides.') .'</p>';
+    break;
+    case NULL:
+      $output = '<p>'.  t('The following provides a quick and easy way of replacing text.') .'</p>';
+      break;
+    default:
+      if (module_exists('locale')) {
+        $lang = locale_language_name($arg[3]);
+        $output = '<p>'.  t('The following provides a quick and easy way of replacing text in @lang.', array('@lang' => $lang)) .'</p>';
+      }
+    break;
+    }
   }
   return $output;
 } // function stringoverrides_help
@@ -44,18 +60,46 @@ function stringoverrides_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'stringoverrides.admin.inc',
   );
+  $items['admin/settings/stringoverrides/import'] = array(
+    'title' => 'Import',
+    'description' => 'Import a set of overrides from a *.po file.',
+    'page arguments' => array('stringoverrides_admin_import'),
+    'access arguments' => array('administer string overrides'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 9,
+  );
+  $items['admin/settings/stringoverrides/export'] = array(
+    'title' => 'Export',
+    'description' => 'Import a set of overrides from a *.po file.',
+    'page arguments' => array('stringoverrides_admin_export'),
+    'access arguments' => array('administer string overrides'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
   
   // Add the language tabs if there are other languages
   if (module_exists('locale')) {
     global $language;
     $languages = locale_language_list();
-    foreach($languages as $code => $name) {
+    foreach ($languages as $code => $name) {
       $items["admin/settings/stringoverrides/$code"] = array(
-        'title' => $name,
+        'title' => '@lang',
+        'title arguments' => array('@lang' => $name),
         'page arguments' => array('stringoverrides_admin', $code),
+        'access arguments' => array('administer string overrides'),
         'type' => $language->language == $code ? MENU_DEFAULT_LOCAL_TASK : MENU_LOCAL_TASK,
       );
     }
+  }
+  else {
+    $items['admin/settings/stringoverrides/en'] = array(
+      'title' => 'Overrides',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('stringoverrides_admin', 'en'),
+      'access arguments' => array('administer string overrides'),
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'file' => 'stringoverrides.admin.inc',
+    );
   }
   
   $items['admin/settings/stringoverrides/js'] = array(
@@ -63,6 +107,7 @@ function stringoverrides_menu() {
     'page callback' => 'stringoverrides_js',
     'type' => MENU_CALLBACK,
     'file' => 'stringoverrides.admin.inc',
+    'access arguments' => array('administer string overrides'),
   );
   return $items;
 } // function stringoverrides_menu

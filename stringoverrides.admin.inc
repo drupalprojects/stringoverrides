@@ -185,3 +185,140 @@ function stringoverrides_js() {
 
   drupal_json(array('status' => TRUE, 'data' => $output));
 } // function stringoverrides_js
+
+
+
+/**
+ * Menu callback for the String Overrides module to display the import administration
+ */
+function stringoverrides_admin_import() {
+  $form = array();
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
+  $languages = module_exists('locale') ? locale_language_list() : array('en' => t('English'));
+  $form['file'] = array(
+    '#type' => 'file',
+    '#title' => t('File'),
+    '#description' => t('Attach your *.po file here to import the string overrides.'),
+  );
+  $form['lang'] = array(
+    '#type' => 'select',
+    '#title' => t('Language'),
+    '#description' => t('Which language to import the overrides to.'),
+    '#options' => $languages,
+  );
+  $form['import'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import'),
+    '#weight' => 3,
+  );
+  return $form;
+} // function stringoverrides_admin_import
+
+
+/**
+ * Triggered when the user imports data
+ */
+function stringoverrides_admin_import_submit($form, &$form_state) {
+  // Check if the file uploaded correctly
+  if ($file = file_save_upload('file')) {
+    $overrides = array();
+  
+    // Start reading the file
+    $handle = @fopen($file->filepath, "r");
+    if ($handle) {
+      $currentoverride = NULL;
+      $currentstring = NULL;
+      $operation = 'msgstr';
+      
+      // Loop through the whole file
+      while (!feof($handle)) {
+        // Retrieve a single line
+        $buffer = trim(fgets($handle));
+        // Skip empty or comment lines
+        if (empty($buffer) || $buffer[0] == '#') {
+          continue;
+        }
+        // Continued string
+        if ($buffer[0] == '"') {
+          // See what we're reading in
+          $string = trim(substr($buffer, 1, -1));
+          if ($operation == 'msgstr' && !empty($string)) {
+            $currentstring .= $string;
+          }
+          else {
+            $currentoverride .= $string;
+          }
+        }
+        else if (substr($buffer, 0, 6) == 'msgstr') {
+          // Retrieve the override string
+          $operation = 'msgstr';
+          $currentstring = substr($buffer, 8, -1);
+        }
+        else if (substr($buffer, 0, 5) == 'msgid') { // New string
+          // Save old string
+          if (!empty($currentstring) && !empty($currentoverride)) {
+            $overrides[$currentoverride] = $currentstring;
+            $currentoverride = $currentstring = '';
+          }
+          // Read what's next
+          $operation = 'msgid';
+          $currentoverride = substr($buffer, 7, -1);
+        }
+      }
+      
+      // Clean up and save the imported data
+      fclose($handle);
+      file_delete($file->filepath);
+      variable_set('locale_custom_strings_'. $form_state['values']['lang'], $overrides);
+      drupal_set_message(t('The overrides have been imported.'));
+    }
+  }
+  else {
+    form_set_error('file', t('A file to import is required.'));
+  }
+} // function stringoverrides_admin_import_submit
+
+/**
+ * Ability to export a *.po file.
+ */
+function stringoverrides_admin_export() {
+  $form = array();
+  $languages = module_exists('locale') ? locale_language_list() : array('en' => t('English'));
+  $form['lang'] = array(
+    '#type' => 'select',
+    '#title' => t('Language'),
+    '#description' => t('The language you would like to export.'),
+    '#options' => $languages,
+    '#required' => TRUE
+  );
+  $form['export'] = array(
+    '#type' => 'submit',
+    '#value' => t('Export'),
+    '#weight' => 3,
+  );
+  $form['#submit'][] = 'stringoverrides_admin_export_submit';
+  return $form;
+} // function stringoverrides_admin_export
+
+/**
+ * Submit-handler for stringoverrides_admin_export.
+ */
+function stringoverrides_admin_export_submit($form, &$form_state) {
+  drupal_set_header('Content-Type: text/plain');
+  drupal_set_header('Content-Disposition: attachment; filename: "stringoverrides.po"');
+  $export = stringoverrides_admin_export_text($form_state['values']['lang']);
+  drupal_set_header('Content-Length: '. strlen($export));
+  echo $export;
+} // stringoverrides_admin_export_submit
+
+/**
+ * Returns the exported *.po text from the given language.
+ */
+function stringoverrides_admin_export_text($lang = 'en') {
+  $export = '# String Overrides Export';
+  $overrides = variable_get('locale_custom_strings_'. $lang, array());
+  foreach ($overrides as $override => $string) {
+    $export .= 'msgid "'. $override ."\"\nmsgstr \"$string\"\n";
+  }
+  return $export;
+} // function stringoverrides_admin_export_text
