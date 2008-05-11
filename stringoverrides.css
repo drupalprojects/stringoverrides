@@ -12,3 +12,7 @@
 #stringoverrides-admin .stringoverrides-replacement {
   width: 50%;
 }
+
+#stringoverrides-admin .stringoverrides-enabled {
+  text-align: center;
+}

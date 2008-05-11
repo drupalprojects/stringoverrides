@@ -15,9 +15,9 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
     global $language;
     $lang = $language->language;
   }
-  $form = array(
-    '#cache' => TRUE,
-  );
+  
+  // Setup the form
+  $form = array('#cache' => TRUE);
   $form['lang'] = array(
     '#type' => 'hidden',
     '#value' => $lang,
@@ -25,27 +25,35 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
   $form['string'] = array(
     '#theme' => 'stringoverrides_strings',
   );
+  
   // Retrieve the words to display
+  $strings = array();
+  $custom_strings = array(
+    FALSE => variable_get('locale_custom_disabled_strings_'. $lang, array()),
+    TRUE => variable_get('locale_custom_strings_'. $lang, array())
+  );
+  foreach ($custom_strings as $enabled => $replacements) {
+    foreach ($replacements as $original => $replacement) {
+      $strings[] = array('enabled' => $enabled, 'original' => $original, 'replacement' => $replacement);
+    }
+  }
+  
+  // Sort the strings and display them in the form
+  usort($strings, 'stringoverrides_admin_word_sort');
   $delta = 0;
-  if ($form_state['storage']['words']) {
-    $words = $form_state['storage']['words'];
-  }
-  else {
-    $words = variable_get('locale_custom_strings_'. $lang, array());
-  }
-  uksort($words, 'strcasecmp'); // Case insensitive sort by key
-  foreach($words as $original => $replacement){
-    $form['string'][$delta] = stringoverrides_textbox_combo($delta, TRUE, $original, $replacement);
+  foreach($strings as $string){
+    $form['string'][$delta] = stringoverrides_textbox_combo($delta, $string['enabled'], $string['original'], $string['replacement']);
     $delta++;
   }
-  for ($index = 0; $index < 3; $index++) {
-    $form['string'][$delta] = stringoverrides_textbox_combo($delta);
+  for ($index = 0; $index < 3; $index++) { // Add placeholder rows
+    $form['string'][$delta] = stringoverrides_textbox_combo($delta, -1);
     $delta++;
   }
   
+  // Add the buttons to the form
   $form['more_strings'] = array(
     '#type' => 'button',
-    '#value' => t('More strings'),
+    '#value' => t('Add row'),
     '#description' => t("If the amount of boxes above isn't enough, click here to add more choices."),
     '#weight' => 2,
     '#ahah' => array(
@@ -58,8 +66,14 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
   );
   $form['save'] = array(
     '#type' => 'submit',
-    '#value' => t('Save'),
+    '#value' => t('Save configuration'),
     '#weight' => 3,
+  );
+  $form['remove'] = array(
+    '#type' => 'submit',
+    '#value' => t('Remove disabled strings'),
+    '#weight' => 4,
+    '#access' => !empty($strings),
   );
   return $form;
 } // function stringoverrides_admin
@@ -69,23 +83,32 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
  */ 
 function stringoverrides_admin_submit($form, &$form_state) {
   // Format the words correctly so that they're put into the database correctly
-  $words = array();
-  foreach ($form_state['values']['string'] as $index => $value) {
-    if (!empty($value['original']) && $value['enabled']) {
-      $words[$value['original']] = $value['replacement'];
+  $words = array(FALSE => array(), TRUE => array());
+  foreach ($form_state['values']['string'] as $index => $string) {
+    if (!empty($string['original'])) {
+      $words[$string['enabled']][$string['original']] = $string['replacement'];
     }
   }
   
   // Save into the correct language definition
-  global $language;
   $lang = $form['lang']['#value'];
   if (empty($lang)) {
+    global $language;
     $lang = $language->language;
   }
-  variable_set('locale_custom_strings_'. $lang, $words);
+  variable_set('locale_custom_strings_'. $lang, $words[1]);
   
-  // Output a message to the user
-  drupal_set_message('Your changes have been saved.');
+  // Save the values and display a message to the user depend
+  switch ($form_state['values']['op']) {
+  case t('Save configuration'):
+    variable_set('locale_custom_disabled_strings_'. $lang, $words[0]);
+    drupal_set_message('Your changes have been saved.');
+  break;
+  case t('Remove disabled strings'):
+    variable_del('locale_custom_disabled_strings_'. $lang);
+    drupal_set_message('The disabled strings have been removed.');
+  break;
+  }
 } // function stringoverrides_admin_submit
 
 /**
@@ -97,8 +120,9 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
   );
   $form['enabled'] = array(
     '#type' => 'checkbox', 
-    '#default_value' => $enabled,
+    '#default_value' => ($enabled == -1) ? TRUE : $enabled,
     '#parents' => array('string', $delta, 'enabled'),
+    '#access' => $enabled != -1, // Have access if it's not a placeholder value
   );
   $form['original'] = array(
     '#type' => 'textarea',
@@ -121,11 +145,6 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
 function theme_stringoverrides_strings($form) {
   drupal_add_css(drupal_get_path('module', 'stringoverrides') .'/stringoverrides.css', 'module', NULL, NULL, FALSE);
   
-  $headers = array(
-    theme('table_select_header_cell'),
-    t('Original'),
-    t('Replacement'),
-  );
   $rows = array();
   foreach (element_children($form) as $key) {
     // Build the table row.
@@ -141,6 +160,11 @@ function theme_stringoverrides_strings($form) {
       $rows[$key] = array_merge($rows[$key], $form[$key]['#attributes']);
     }
   }
+  $headers = array(
+    sizeof($rows) > 3 ? t('Enabled') : NULL, // theme('table_select_header_cell'),
+    t('Original'),
+    t('Replacement'),
+  );
 
   $output  = '';
   $output .= '<div id="stringoverrides-wrapper">';
@@ -186,8 +210,6 @@ function stringoverrides_js() {
   drupal_json(array('status' => TRUE, 'data' => $output));
 } // function stringoverrides_js
 
-
-
 /**
  * Menu callback for the String Overrides module to display the import administration
  */
@@ -213,7 +235,6 @@ function stringoverrides_admin_import() {
   );
   return $form;
 } // function stringoverrides_admin_import
-
 
 /**
  * Triggered when the user imports data
@@ -322,3 +343,10 @@ function stringoverrides_admin_export_text($lang = 'en') {
   }
   return $export;
 } // function stringoverrides_admin_export_text
+
+/**
+ * Sorts two words based on their original text.
+ */
+function stringoverrides_admin_word_sort($word1, $word2) {
+  return strcasecmp($word1['original'], $word2['original']);
+}
