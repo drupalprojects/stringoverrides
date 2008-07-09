@@ -15,7 +15,7 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
     global $language;
     $lang = $language->language;
   }
-  
+
   // Setup the form
   $form = array('#cache' => TRUE);
   $form['lang'] = array(
@@ -25,7 +25,7 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
   $form['string'] = array(
     '#theme' => 'stringoverrides_strings',
   );
-  
+
   // Retrieve the words to display
   $strings = array();
   $custom_strings = array(
@@ -37,7 +37,7 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
       $strings[] = array('enabled' => $enabled, 'original' => $original, 'replacement' => $replacement);
     }
   }
-  
+
   // Sort the strings and display them in the form
   usort($strings, 'stringoverrides_admin_word_sort');
   $delta = 0;
@@ -49,7 +49,7 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
     $form['string'][$delta] = stringoverrides_textbox_combo($delta, -1);
     $delta++;
   }
-  
+
   // Add the buttons to the form
   $form['more_strings'] = array(
     '#type' => 'button',
@@ -80,7 +80,7 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
 
 /**
  * Triggered when the user submits the administration page
- */ 
+ */
 function stringoverrides_admin_submit($form, &$form_state) {
   // Format the words correctly so that they're put into the database correctly
   $words = array(FALSE => array(), TRUE => array());
@@ -89,7 +89,7 @@ function stringoverrides_admin_submit($form, &$form_state) {
       $words[$string['enabled']][$string['original']] = $string['replacement'];
     }
   }
-  
+
   // Save into the correct language definition
   $lang = $form['lang']['#value'];
   if (empty($lang)) {
@@ -97,7 +97,7 @@ function stringoverrides_admin_submit($form, &$form_state) {
     $lang = $language->language;
   }
   variable_set('locale_custom_strings_'. $lang, $words[1]);
-  
+
   // Save the values and display a message to the user depend
   switch ($form_state['values']['op']) {
   case t('Save configuration'):
@@ -113,13 +113,13 @@ function stringoverrides_admin_submit($form, &$form_state) {
 
 /**
  * Function to return a textbox combo form
- */ 
+ */
 function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = '', $replacement = '') {
   $form = array(
     '#tree' => TRUE,
   );
   $form['enabled'] = array(
-    '#type' => 'checkbox', 
+    '#type' => 'checkbox',
     '#default_value' => ($enabled == -1) ? TRUE : $enabled,
     '#parents' => array('string', $delta, 'enabled'),
     '#access' => $enabled != -1, // Have access if it's not a placeholder value
@@ -144,7 +144,7 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
  */
 function theme_stringoverrides_strings($form) {
   drupal_add_css(drupal_get_path('module', 'stringoverrides') .'/stringoverrides.css', 'module', NULL, NULL, FALSE);
-  
+
   $rows = array();
   foreach (element_children($form) as $key) {
     // Build the table row.
@@ -243,14 +243,14 @@ function stringoverrides_admin_import_submit($form, &$form_state) {
   // Check if the file uploaded correctly
   if ($file = file_save_upload('file')) {
     $overrides = array();
-  
+
     // Start reading the file
     $handle = @fopen($file->filepath, "r");
     if ($handle) {
       $currentoverride = NULL;
       $currentstring = NULL;
       $operation = 'msgstr';
-      
+
       // Loop through the whole file
       while (!feof($handle)) {
         // Retrieve a single line
@@ -286,7 +286,12 @@ function stringoverrides_admin_import_submit($form, &$form_state) {
           $currentoverride = substr($buffer, 7, -1);
         }
       }
-      
+
+      // Save old string
+      if (!empty($currentstring) && !empty($currentoverride)) {
+        $overrides[$currentoverride] = $currentstring;
+      }
+
       // Clean up and save the imported data
       fclose($handle);
       file_delete($file->filepath);
