@@ -26,7 +26,7 @@ function stringoverrides_admin() {
     $form['string'][$delta] = stringoverrides_textbox_combo($delta);
     $delta++;
   }
-  
+
   $form['save'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
@@ -37,7 +37,7 @@ function stringoverrides_admin() {
 
 /**
  * Triggered when the user submits the administration page
- */ 
+ */
 function stringoverrides_admin_submit($form_id, $form_values) {
   // Format the words correctly so that they're put into the database correctly
   $words = array();
@@ -46,23 +46,23 @@ function stringoverrides_admin_submit($form_id, $form_values) {
       $words[$value['original']] = $value['replacement'];
     }
   }
-  
+
   // Save into the English language definition
   variable_set('locale_custom_strings_en', $words);
-  
+
   // Output a message to the user
   drupal_set_message('Your changes have been saved.');
 } // function stringoverrides_admin_submit
 
 /**
  * Function to return a textbox combo form
- */ 
+ */
 function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = '', $replacement = '') {
   $form = array(
     '#tree' => TRUE,
   );
   $form['enabled'] = array(
-    '#type' => 'checkbox', 
+    '#type' => 'checkbox',
     '#default_value' => $enabled,
     '#parents' => array('string', $delta, 'enabled'),
   );
@@ -86,7 +86,7 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
  */
 function theme_stringoverrides_strings($form) {
   drupal_add_css(drupal_get_path('module', 'stringoverrides') .'/stringoverrides.css', 'module', NULL, NULL, FALSE);
-  
+
   $headers = array(
     theme('table_select_header_cell'),
     t('Original'),
@@ -142,14 +142,14 @@ function stringoverrides_admin_import_submit($form_id, $form_values) {
   // Check if the file uploaded correctly
   if ($file = file_check_upload('file')) {
     $overrides = array();
-  
+
     // Start reading the file
     $handle = @fopen($file->filepath, "r");
     if ($handle) {
       $currentoverride = NULL;
       $currentstring = NULL;
       $operation = 'msgstr';
-      
+
       // Loop through the whole file
       while (!feof($handle)) {
         // Retrieve a single line
@@ -185,7 +185,12 @@ function stringoverrides_admin_import_submit($form_id, $form_values) {
           $currentoverride = substr($buffer, 7, -1);
         }
       }
-      
+
+      // Save old string
+      if (!empty($currentstring) && !empty($currentoverride)) {
+        $overrides[$currentoverride] = $currentstring;
+      }
+
       // Clean up and save the imported data
       fclose($handle);
       file_delete($file->filepath);
@@ -203,7 +208,7 @@ function stringoverrides_admin_import_submit($form_id, $form_values) {
  */
 function stringoverrides_admin_export() {
   $form = array();
-  
+
   $export = '';
   $overrides = variable_get('locale_custom_strings_en', array());
   foreach ($overrides as $override => $string) {
