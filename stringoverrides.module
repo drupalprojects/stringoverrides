@@ -37,14 +37,14 @@ function stringoverrides_help($path, $arg) {
     }
   }
   return $output;
-} // function stringoverrides_help
+}
 
 /**
  * Implementation of hook_perm()
  */
 function stringoverrides_perm() {
   return array('administer string overrides');
-} // function stringoverrides_perm
+}
 
 /**
  * Implementation of hook_menu()
@@ -110,7 +110,7 @@ function stringoverrides_menu() {
     'access arguments' => array('administer string overrides'),
   );
   return $items;
-} // function stringoverrides_menu
+}
 
 /**
  * Implementation of hook_theme()
@@ -121,4 +121,4 @@ function stringoverrides_theme() {
       'arguments' => array('form' => NULL),
     ),
   );
-} // function stringoverrides_theme
+}

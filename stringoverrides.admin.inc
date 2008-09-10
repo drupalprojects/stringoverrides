@@ -76,7 +76,7 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
     '#access' => !empty($strings),
   );
   return $form;
-} // function stringoverrides_admin
+}
 
 /**
  * Triggered when the user submits the administration page
@@ -109,7 +109,7 @@ function stringoverrides_admin_submit($form, &$form_state) {
     drupal_set_message('The disabled strings have been removed.');
   break;
   }
-} // function stringoverrides_admin_submit
+}
 
 /**
  * Function to return a textbox combo form
@@ -137,7 +137,7 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
     '#parents' => array('string', $delta, 'replacement'),
   );
   return $form;
-} // function stringoverrides_textbox_combo
+}
 
 /**
  * Theme the enabled box and the two text box strings
@@ -172,7 +172,7 @@ function theme_stringoverrides_strings($form) {
   $output .= '</div>';
   $output .= drupal_render($form);
   return $output;
-} // function theme_stringoverrides_strings
+}
 
 /**
  * Menu callback for the String Overrides module to display a new string override
@@ -208,7 +208,7 @@ function stringoverrides_js() {
   $output = theme('status_messages') . drupal_render($string_form);
 
   drupal_json(array('status' => TRUE, 'data' => $output));
-} // function stringoverrides_js
+}
 
 /**
  * Menu callback for the String Overrides module to display the import administration
@@ -234,7 +234,7 @@ function stringoverrides_admin_import() {
     '#weight' => 3,
   );
   return $form;
-} // function stringoverrides_admin_import
+}
 
 /**
  * Triggered when the user imports data
@@ -302,7 +302,7 @@ function stringoverrides_admin_import_submit($form, &$form_state) {
   else {
     form_set_error('file', t('A file to import is required.'));
   }
-} // function stringoverrides_admin_import_submit
+}
 
 /**
  * Ability to export a *.po file.
@@ -324,7 +324,7 @@ function stringoverrides_admin_export() {
   );
   $form['#submit'][] = 'stringoverrides_admin_export_submit';
   return $form;
-} // function stringoverrides_admin_export
+}
 
 /**
  * Submit-handler for stringoverrides_admin_export.
@@ -335,7 +335,7 @@ function stringoverrides_admin_export_submit($form, &$form_state) {
   $export = stringoverrides_admin_export_text($form_state['values']['lang']);
   drupal_set_header('Content-Length: '. strlen($export));
   echo $export;
-} // stringoverrides_admin_export_submit
+}
 
 /**
  * Returns the exported *.po text from the given language.
@@ -347,7 +347,7 @@ function stringoverrides_admin_export_text($lang = 'en') {
     $export .= 'msgid "'. $override ."\"\nmsgstr \"$string\"\n";
   }
   return $export;
-} // function stringoverrides_admin_export_text
+}
 
 /**
  * Sorts two words based on their original text.
