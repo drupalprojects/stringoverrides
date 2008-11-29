@@ -335,13 +335,14 @@ function stringoverrides_admin_export_submit($form, &$form_state) {
   $export = stringoverrides_admin_export_text($form_state['values']['lang']);
   drupal_set_header('Content-Length: '. strlen($export));
   echo $export;
+  $form_state['redirect'] = FALSE;
 }
 
 /**
  * Returns the exported *.po text from the given language.
  */
 function stringoverrides_admin_export_text($lang = 'en') {
-  $export = '# String Overrides Export';
+  $export = "# String Overrides Export\n";
   $overrides = variable_get('locale_custom_strings_'. $lang, array());
   foreach ($overrides as $override => $string) {
     $export .= 'msgid "'. $override ."\"\nmsgstr \"$string\"\n";
