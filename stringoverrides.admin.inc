@@ -33,7 +33,7 @@ function stringoverrides_admin() {
     '#weight' => 3,
   );
   return $form;
-} // function stringoverrides_admin
+}
 
 /**
  * Triggered when the user submits the administration page
@@ -52,7 +52,7 @@ function stringoverrides_admin_submit($form_id, $form_values) {
 
   // Output a message to the user
   drupal_set_message('Your changes have been saved.');
-} // function stringoverrides_admin_submit
+}
 
 /**
  * Function to return a textbox combo form
@@ -79,7 +79,7 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
     '#parents' => array('string', $delta, 'replacement'),
   );
   return $form;
-} // function stringoverrides_textbox_combo
+}
 
 /**
  * Theme the enabled box and the two text box strings
@@ -114,7 +114,7 @@ function theme_stringoverrides_strings($form) {
   $output .= '</div>';
   $output .= drupal_render($form);
   return $output;
-} // function theme_stringoverrides_strings
+}
 
 /**
  * Menu callback for the String Overrides module to display the import administration
@@ -133,7 +133,7 @@ function stringoverrides_admin_import() {
     '#weight' => 3,
   );
   return $form;
-} // function stringoverrides_admin_import
+}
 
 /**
  * Triggered when the user imports data
@@ -201,7 +201,7 @@ function stringoverrides_admin_import_submit($form_id, $form_values) {
   else {
     form_set_error('file', t('A file to import is required.'));
   }
-} // function stringoverrides_admin_import_submit
+}
 
 /**
  * Ability to export a *.po file.
@@ -221,4 +221,4 @@ function stringoverrides_admin_export() {
     '#description' => t('This is the generated *.po file.'),
   );
   return $form;
-} // function stringoverrides_admin_export
+}

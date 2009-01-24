@@ -29,7 +29,7 @@ function stringoverrides_help($path) {
     }
   }
   return $output;
-} // function stringoverrides_help
+}
 
 /**
  * Implementation of hook_perm()
@@ -85,7 +85,7 @@ function stringoverrides_menu($may_cache) {
   }
 
   return $items;
-} // function stringoverrides_menu
+}
 
 /**
  * Check that locale module is disabled before enabling this module.
@@ -95,7 +95,7 @@ function stringoverrides_enable() {
     drupal_set_message(t('String overrides module is not compatible with Locale module. Please disable it before using String overrides.'), 'error');
     module_disable(array('stringoverrides'));
   }
-} // function stringoverrides_enable
+}
 
 /**
  * Fake the locale function.
