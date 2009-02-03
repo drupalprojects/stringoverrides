@@ -86,7 +86,9 @@ function stringoverrides_admin_submit($form, &$form_state) {
   $words = array(FALSE => array(), TRUE => array());
   foreach ($form_state['values']['string'] as $index => $string) {
     if (!empty($string['original'])) {
-      $words[$string['enabled']][$string['original']] = $string['replacement'];
+      // Get rid of carriage returns.
+      list($orig, $replace) = str_replace("\r", '', array($string['original'], $string['replacement']));
+      $words[$string['enabled']][$orig] = $replace;
     }
   }
 
