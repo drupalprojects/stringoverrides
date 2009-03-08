@@ -279,7 +279,7 @@ function stringoverrides_admin_import_submit($form, &$form_state) {
         }
         else if (substr($buffer, 0, 5) == 'msgid') { // New string
           // Save old string
-          if (!empty($currentstring) && !empty($currentoverride)) {
+          if (!empty($currentoverride)) {
             $overrides[$currentoverride] = $currentstring;
             $currentoverride = $currentstring = '';
           }
