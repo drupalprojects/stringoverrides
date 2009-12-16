@@ -5,11 +5,11 @@
   height: 1.7em;
 }
 
-#stringoverrides-admin .stringoverrides-original {
+#stringoverrides-admin .stringoverrides-source {
   width: 50%;
 }
 
-#stringoverrides-admin .stringoverrides-replacement {
+#stringoverrides-admin .stringoverrides-translation {
   width: 50%;
 }
 

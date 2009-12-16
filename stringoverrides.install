@@ -2,10 +2,20 @@
 // $Id$
 
 /**
- * Implementation of hook_uninstall()
+ * Implements hook_uninstall().
  */
 function stringoverrides_uninstall() {
   // Remove all stored string replacements
   db_query('DELETE FROM {variable} WHERE name LIKE "locale_custom_strings_%"');
   db_query('DELETE FROM {variable} WHERE name LIKE "locale_custom_disabled_strings_%"');
+}
+
+/**
+ * Update to Drupal 7.
+ * Will be solved later. Set the version number for new installs for now.
+ */
+function stringoverrides_update_7000() {
+  $ret = array();
+
+  return $ret;
 }

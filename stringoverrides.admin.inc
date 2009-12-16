@@ -9,7 +9,7 @@
 /**
  * Menu callback for the String Overrides module to display its administration
  */
-function stringoverrides_admin($form_state = NULL, $lang = NULL) {
+function stringoverrides_admin($form, $form_state, $lang = NULL) {
   // See which language we're modifying
   if (empty($lang)) {
     global $language;
@@ -17,47 +17,66 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
   }
 
   // Setup the form
-  $form = array('#cache' => TRUE);
+  $form['#cache'] = TRUE;
+  $form['#attached']['css'][drupal_get_path('module', 'stringoverrides') . '/stringoverrides.css'] = array();
+  
   $form['lang'] = array(
     '#type' => 'hidden',
     '#value' => $lang,
   );
   $form['string'] = array(
+    '#tree' => TRUE,
+    '#prefix' => '<div id="stringoverrides-wrapper">',
+    '#suffix' => '</div>',
     '#theme' => 'stringoverrides_strings',
   );
 
-  // Retrieve the words to display
-  $strings = array();
-  $custom_strings = array(
-    FALSE => variable_get('locale_custom_disabled_strings_'. $lang, array()),
-    TRUE => variable_get('locale_custom_strings_'. $lang, array())
+  $words = array(
+    FALSE => variable_get("locale_custom_disabled_strings_$lang", array()),
+    TRUE => variable_get("locale_custom_strings_$lang", array())
   );
-  foreach ($custom_strings as $enabled => $replacements) {
-    foreach ($replacements as $original => $replacement) {
-      $strings[] = array('enabled' => $enabled, 'original' => $original, 'replacement' => $replacement);
+  $strings = array();
+  foreach ($words as $enabled => $custom_strings) {
+    foreach ($custom_strings as $context => $translations) {
+      foreach ($translations as $source => $translation) {
+        $strings[] = array(
+          'enabled' => $enabled,
+          'context' => $context,
+          'source' => $source,
+          'translation' => $translation,
+        );
+      }
     }
+  }
+
+  if (isset($form_state['string_count'])) {
+    $string_count = $form_state['string_count'];
+  }
+  else {
+    $string_count = max(3, count($strings));
   }
 
   // Sort the strings and display them in the form
   usort($strings, 'stringoverrides_admin_word_sort');
-  $delta = 0;
-  foreach($strings as $string){
-    $form['string'][$delta] = stringoverrides_textbox_combo($delta, $string['enabled'], $string['original'], $string['replacement']);
-    $delta++;
-  }
-  for ($index = 0; $index < 3; $index++) { // Add placeholder rows
-    $form['string'][$delta] = stringoverrides_textbox_combo($delta, -1);
-    $delta++;
+  for ($index = 0; $index < $string_count; $index++) {
+    if (isset($strings[$index])) {
+      $string = $strings[$index];
+      $form['string'][$index] = stringoverrides_textbox_combo($index, $string['enabled'], $string['context'], $string['source'], $string['translation']);
+    }
+    else {
+      $form['string'][$index] = stringoverrides_textbox_combo($index, -1);
+    }
   }
 
   // Add the buttons to the form
   $form['more_strings'] = array(
-    '#type' => 'button',
+    '#type' => 'submit',
     '#value' => t('Add row'),
     '#description' => t("If the amount of boxes above isn't enough, click here to add more choices."),
     '#weight' => 2,
-    '#ahah' => array(
-      'path' => 'admin/settings/stringoverrides/js',
+    '#submit' => array('stringoverrides_more_strings_submit'),
+    '#ajax' => array(
+      'callback' => 'stringoverrides_ajax',
       'wrapper' => 'stringoverrides-wrapper',
       'method' => 'replace',
       'effect' => 'fade',
@@ -82,13 +101,19 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
  * Triggered when the user submits the administration page
  */
 function stringoverrides_admin_submit($form, &$form_state) {
+  if (!in_array($form_state['clicked_button']['#id'], array('edit-save', 'edit-remove'))) {
+    // Submit the form only for save and remove buttons.
+    return;
+  }
+
   // Format the words correctly so that they're put into the database correctly
   $words = array(FALSE => array(), TRUE => array());
   foreach ($form_state['values']['string'] as $index => $string) {
-    if (!empty($string['original'])) {
+    if (!empty($string['source'])) {
+      $context = check_plain($string['context']);
       // Get rid of carriage returns.
-      list($orig, $replace) = str_replace("\r", '', array($string['original'], $string['replacement']));
-      $words[$string['enabled']][$orig] = $replace;
+      list($source, $translation) = str_replace("\r", '', array($string['source'], $string['translation']));
+      $words[$string['enabled']][$context][$source] = $translation;
     }
   }
 
@@ -98,45 +123,47 @@ function stringoverrides_admin_submit($form, &$form_state) {
     global $language;
     $lang = $language->language;
   }
-  variable_set('locale_custom_strings_'. $lang, $words[1]);
+  variable_set("locale_custom_strings_$lang", $words[1]);
 
   // Save the values and display a message to the user depend
-  switch ($form_state['values']['op']) {
-  case t('Save configuration'):
-    variable_set('locale_custom_disabled_strings_'. $lang, $words[0]);
-    drupal_set_message('Your changes have been saved.');
-  break;
-  case t('Remove disabled strings'):
-    variable_del('locale_custom_disabled_strings_'. $lang);
-    drupal_set_message('The disabled strings have been removed.');
-  break;
+  switch ($form_state['clicked_button']['#id']) {
+    case 'edit-save':
+      variable_set("locale_custom_disabled_strings_$lang", $words[0]);
+      drupal_set_message('Your changes have been saved.');
+      break;
+
+    case 'edit-remove':
+      variable_del("locale_custom_disabled_strings_$lang");
+      drupal_set_message('The disabled strings have been removed.');
+      break;
   }
 }
 
 /**
  * Function to return a textbox combo form
  */
-function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = '', $replacement = '') {
-  $form = array(
-    '#tree' => TRUE,
-  );
+function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $context = '', $source = '', $translation = '') {
+  $form['#tree'] = TRUE;
   $form['enabled'] = array(
     '#type' => 'checkbox',
     '#default_value' => ($enabled == -1) ? TRUE : $enabled,
-    '#parents' => array('string', $delta, 'enabled'),
     '#access' => $enabled != -1, // Have access if it's not a placeholder value
   );
-  $form['original'] = array(
-    '#type' => 'textarea',
-    '#default_value' => $original,
-    '#rows' => 1,
-    '#parents' => array('string', $delta, 'original'),
+  $form['context'] = array(
+    '#type' => 'textfield',
+    '#default_value' => $context,
+    '#size' => 20,
+    '#maxlength' => 255,
   );
-  $form['replacement'] = array(
+  $form['source'] = array(
     '#type' => 'textarea',
-    '#default_value' => $replacement,
+    '#default_value' => $source,
     '#rows' => 1,
-    '#parents' => array('string', $delta, 'replacement'),
+  );
+  $form['translation'] = array(
+    '#type' => 'textarea',
+    '#default_value' => $translation,
+    '#rows' => 1,
   );
   return $form;
 }
@@ -144,17 +171,17 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
 /**
  * Theme the enabled box and the two text box strings
  */
-function theme_stringoverrides_strings($form) {
-  drupal_add_css(drupal_get_path('module', 'stringoverrides') .'/stringoverrides.css', 'module', NULL, NULL, FALSE);
-
+function theme_stringoverrides_strings($variables) {
+  $form = $variables['form'];
   $rows = array();
   foreach (element_children($form) as $key) {
     // Build the table row.
     $rows[$key] = array(
       'data' => array(
         array('data' => drupal_render($form[$key]['enabled']), 'class' => 'stringoverrides-enabled'),
-        array('data' => drupal_render($form[$key]['original']), 'class' => 'stringoverrides-original'),
-        array('data' => drupal_render($form[$key]['replacement']), 'class' => 'stringoverrides-replacement'),
+        array('data' => drupal_render($form[$key]['context']), 'class' => 'stringoverrides-context'),
+        array('data' => drupal_render($form[$key]['source']), 'class' => 'stringoverrides-source'),
+        array('data' => drupal_render($form[$key]['translation']), 'class' => 'stringoverrides-translation'),
       ),
     );
     // Add any attributes on the element to the row, such as the ahah class.
@@ -162,199 +189,35 @@ function theme_stringoverrides_strings($form) {
       $rows[$key] = array_merge($rows[$key], $form[$key]['#attributes']);
     }
   }
-  $headers = array(
-    sizeof($rows) > 3 ? t('Enabled') : NULL, // theme('table_select_header_cell'),
+  $header = array(
+    ($form[0]['enabled']['#access']) ? t('Enabled') : NULL,
+    t('Context'),
     t('Original'),
     t('Replacement'),
   );
 
-  $output  = '';
-  $output .= '<div id="stringoverrides-wrapper">';
-  $output .= theme('table', $headers, $rows);
-  $output .= '</div>';
-  $output .= drupal_render($form);
+  $output = theme('table', array('header' => $header, 'rows' => $rows));
+  $output .= drupal_render_children($form);
   return $output;
 }
 
 /**
  * Menu callback for the String Overrides module to display a new string override
  */
-function stringoverrides_js() {
-  $delta = count($_POST['string']);
-
-  // Build our new form element.
-  $form_element = stringoverrides_textbox_combo($delta);
-  drupal_alter('form', $form_element, array(), 'stringoverrides_js');
-
-  // Build the new form.
-  $form_state = array('submitted' => FALSE);
-  $form_build_id = $_POST['form_build_id'];
-  // Add the new element to the stored form. Without adding the element to the
-  // form, Drupal is not aware of this new elements existence and will not
-  // process it. We retreive the cached form, add the element, and resave.
-  $form = form_get_cache($form_build_id, $form_state);
-  $form['string'][$delta] = $form_element;
-  form_set_cache($form_build_id, $form, $form_state);
-  $form += array(
-    '#post' => $_POST,
-    '#programmed' => FALSE,
-  );
-
-  // Rebuild the form.
-  $form = form_builder('stringoverrides_admin', $form, $form_state);
-
-  // Render the new output.
-  $string_form = $form['string'];
-  $string_form[$delta]['enabled']['#value'] = TRUE;
-  $string_form[$delta]['#attributes']['class'] = empty($string_form[$delta]['#attributes']['class']) ? 'ahah-new-content' : $string_form[$delta]['#attributes']['class'] .' ahah-new-content';
-  $output = theme('status_messages') . drupal_render($string_form);
-
-  drupal_json(array('status' => TRUE, 'data' => $output));
+function stringoverrides_ajax($form, $form_state) {
+  return $form['string'];
 }
 
 /**
- * Menu callback for the String Overrides module to display the import administration
+ * Submit handler for the "Add row" button.
  */
-function stringoverrides_admin_import() {
-  $form = array();
-  $form['#attributes'] = array('enctype' => "multipart/form-data");
-  $languages = module_exists('locale') ? locale_language_list() : array('en' => t('English'));
-  $form['file'] = array(
-    '#type' => 'file',
-    '#title' => t('File'),
-    '#description' => t('Attach your *.po file here to import the string overrides.'),
-  );
-  $form['lang'] = array(
-    '#type' => 'select',
-    '#title' => t('Language'),
-    '#description' => t('Which language to import the overrides to.'),
-    '#options' => $languages,
-  );
-  $form['import'] = array(
-    '#type' => 'submit',
-    '#value' => t('Import'),
-    '#weight' => 3,
-  );
-  return $form;
+function stringoverrides_more_strings_submit($form, &$form_state) {
+  $form_state['string_count'] = count($form_state['values']['string']) + 1;
 }
 
 /**
- * Triggered when the user imports data
- */
-function stringoverrides_admin_import_submit($form, &$form_state) {
-  // Check if the file uploaded correctly
-  if ($file = file_save_upload('file')) {
-    $overrides = array();
-
-    // Start reading the file
-    $handle = @fopen($file->filepath, "r");
-    if ($handle) {
-      $currentoverride = NULL;
-      $currentstring = NULL;
-      $operation = 'msgstr';
-
-      // Loop through the whole file
-      while (!feof($handle)) {
-        // Retrieve a single line
-        $buffer = trim(fgets($handle));
-        // Skip empty or comment lines
-        if (empty($buffer) || $buffer[0] == '#') {
-          continue;
-        }
-        // Continued string
-        if ($buffer[0] == '"') {
-          // See what we're reading in
-          $string = trim(substr($buffer, 1, -1));
-          if ($operation == 'msgstr' && !empty($string)) {
-            $currentstring .= $string;
-          }
-          else {
-            $currentoverride .= $string;
-          }
-        }
-        else if (substr($buffer, 0, 6) == 'msgstr') {
-          // Retrieve the override string
-          $operation = 'msgstr';
-          $currentstring = substr($buffer, 8, -1);
-        }
-        else if (substr($buffer, 0, 5) == 'msgid') { // New string
-          // Save old string
-          if (!empty($currentoverride)) {
-            $overrides[$currentoverride] = $currentstring;
-            $currentoverride = $currentstring = '';
-          }
-          // Read what's next
-          $operation = 'msgid';
-          $currentoverride = substr($buffer, 7, -1);
-        }
-      }
-
-      // Save old string
-      if (!empty($currentstring) && !empty($currentoverride)) {
-        $overrides[$currentoverride] = $currentstring;
-      }
-
-      // Clean up and save the imported data
-      fclose($handle);
-      file_delete($file->filepath);
-      variable_set('locale_custom_strings_'. $form_state['values']['lang'], $overrides);
-      drupal_set_message(t('The overrides have been imported.'));
-    }
-  }
-  else {
-    form_set_error('file', t('A file to import is required.'));
-  }
-}
-
-/**
- * Ability to export a *.po file.
- */
-function stringoverrides_admin_export() {
-  $form = array();
-  $languages = module_exists('locale') ? locale_language_list() : array('en' => t('English'));
-  $form['lang'] = array(
-    '#type' => 'select',
-    '#title' => t('Language'),
-    '#description' => t('The language you would like to export.'),
-    '#options' => $languages,
-    '#required' => TRUE
-  );
-  $form['export'] = array(
-    '#type' => 'submit',
-    '#value' => t('Export'),
-    '#weight' => 3,
-  );
-  $form['#submit'][] = 'stringoverrides_admin_export_submit';
-  return $form;
-}
-
-/**
- * Submit-handler for stringoverrides_admin_export.
- */
-function stringoverrides_admin_export_submit($form, &$form_state) {
-  drupal_set_header('Content-Type: text/plain');
-  drupal_set_header('Content-Disposition: attachment; filename: "stringoverrides.po"');
-  $export = stringoverrides_admin_export_text($form_state['values']['lang']);
-  drupal_set_header('Content-Length: '. strlen($export));
-  echo $export;
-  $form_state['redirect'] = FALSE;
-}
-
-/**
- * Returns the exported *.po text from the given language.
- */
-function stringoverrides_admin_export_text($lang = 'en') {
-  $export = "# String Overrides Export\n";
-  $overrides = variable_get('locale_custom_strings_'. $lang, array());
-  foreach ($overrides as $override => $string) {
-    $export .= 'msgid "'. $override ."\"\nmsgstr \"$string\"\n";
-  }
-  return $export;
-}
-
-/**
- * Sorts two words based on their original text.
+ * Sorts two words based on their source text.
  */
 function stringoverrides_admin_word_sort($word1, $word2) {
-  return strcasecmp($word1['original'], $word2['original']);
+  return strcasecmp($word1['source'], $word2['source']);
 }
