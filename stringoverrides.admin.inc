@@ -60,8 +60,7 @@ function stringoverrides_admin($form_state = NULL, $lang = NULL) {
       'path' => 'admin/settings/stringoverrides/js',
       'wrapper' => 'stringoverrides-wrapper',
       'method' => 'replace',
-      'effect' => 'fade',
-      'progress' => 'none',
+      'effect' => 'none',
     ),
   );
   $form['save'] = array(
@@ -104,11 +103,11 @@ function stringoverrides_admin_submit($form, &$form_state) {
   switch ($form_state['values']['op']) {
   case t('Save configuration'):
     variable_set('locale_custom_disabled_strings_'. $lang, $words[0]);
-    drupal_set_message('Your changes have been saved.');
+    drupal_set_message(t('Your changes have been saved.'));
   break;
   case t('Remove disabled strings'):
     variable_del('locale_custom_disabled_strings_'. $lang);
-    drupal_set_message('The disabled strings have been removed.');
+    drupal_set_message(t('The disabled strings have been removed.'));
   break;
   }
 }
