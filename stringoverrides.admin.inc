@@ -217,7 +217,7 @@ function theme_stringoverrides_strings($variables) {
     }
   }
   $header = array(
-    ($form[0]['enabled']['#access']) ? array('data' => t('Original'), 'title' => t('Flag whether the given override should be active.')) : NULL,
+    ($form[0]['enabled']['#access']) ? array('data' => t('Enabled'), 'title' => t('Flag whether the given override should be active.')) : NULL,
     array('data' => t('Original'), 'title' => t('The original source text to be replaced.')),
     array('data' => t('Replacement'), 'title' => t('The text to replace the original source text.')),
     array('data' => t('Context'), 'title' => t('Some strings have context applied to them. In those cases, you can provide the context in this column.')),
