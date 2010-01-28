@@ -53,7 +53,7 @@ function stringoverrides_admin_submit($form_id, $form_values) {
   variable_set('locale_custom_strings_en', $words);
 
   // Output a message to the user
-  drupal_set_message('Your changes have been saved.');
+  drupal_set_message(t('Your changes have been saved.'));
 }
 
 /**
