@@ -14,10 +14,12 @@ function stringoverrides_help($path, $arg) {
     case 'admin/help#stringoverrides':
       $output = '<p>' . t('The <strong>String Overrides</strong> module provides a quick and easy way of replacing text.') . '</p>';
       $output .= '<p>' . t('To replace a string, enter <strong>the complete string</strong> that is passed through the <a href="@t">t()</a> function. String Overrides cannot translate user-defined content, it can only replace strings wrapped in the t() function. To find the strings you can actually change, open up a module and look for t() function calls. Places where %, @, or ! are used means that the translation contains dynamic information (such as the node type or title in the above examples); these are not translated while the text around them is.', array('@t' => 'http://api.drupal.org/api/function/t')) . '</p>';
-      $output .= '<p>' . t('For example:') . '</p>';
       $output .= theme('item_list', array(
-        '"The %post has been updated." &rarr; "You just updated the %post."',
-        '"Are you sure you want to delete %title?" &rarr; "Do you want to delete %title?"',
+        'title' => t('Examples'),
+        'items' => array(
+          '"The %post has been updated." &rarr; "You just updated the %post."',
+          '"Are you sure you want to delete %title?" &rarr; "Do you want to delete %title?"',
+        ),
       ));
       $output .= '<p>' . t('Remember, you must replace the entire string, not just a portion of it.') . '</p>';
       return $output;

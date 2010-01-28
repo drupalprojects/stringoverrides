@@ -16,3 +16,7 @@
 #stringoverrides-admin .stringoverrides-enabled {
   text-align: center;
 }
+
+#stringoverrides-wrapper td {
+	vertical-align: top;
+}

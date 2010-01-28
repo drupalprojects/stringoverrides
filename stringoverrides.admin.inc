@@ -53,7 +53,7 @@ function stringoverrides_admin($form, $form_state, $lang = NULL) {
     $string_count = $form_state['string_count'];
   }
   else {
-    $string_count = max(3, count($strings));
+    $string_count = count($strings) + 2;
   }
 
   // Sort the strings and display them in the form
@@ -69,7 +69,11 @@ function stringoverrides_admin($form, $form_state, $lang = NULL) {
   }
 
   // Add the buttons to the form
-  $form['more_strings'] = array(
+  $form['actions'] = array(
+    '#type' => 'container',
+    '#attributes' => array('class' => array('form-actions', 'container-inline')),
+  );
+  $form['actions']['more_strings'] = array(
     '#type' => 'submit',
     '#value' => t('Add row'),
     '#description' => t("If the amount of boxes above isn't enough, click here to add more choices."),
@@ -79,16 +83,15 @@ function stringoverrides_admin($form, $form_state, $lang = NULL) {
       'callback' => 'stringoverrides_ajax',
       'wrapper' => 'stringoverrides-wrapper',
       'method' => 'replace',
-      'effect' => 'fade',
-      'progress' => 'none',
+      'effect' => 'none',
     ),
   );
-  $form['save'] = array(
+  $form['actions']['save'] = array(
     '#type' => 'submit',
     '#value' => t('Save configuration'),
     '#weight' => 3,
   );
-  $form['remove'] = array(
+  $form['actions']['remove'] = array(
     '#type' => 'submit',
     '#value' => t('Remove disabled strings'),
     '#weight' => 4,
@@ -129,12 +132,12 @@ function stringoverrides_admin_submit($form, &$form_state) {
   switch ($form_state['clicked_button']['#id']) {
     case 'edit-save':
       variable_set("locale_custom_disabled_strings_$lang", $words[0]);
-      drupal_set_message('Your changes have been saved.');
+      drupal_set_message(t('Your changes have been saved.'));
       break;
 
     case 'edit-remove':
       variable_del("locale_custom_disabled_strings_$lang");
-      drupal_set_message('The disabled strings have been removed.');
+      drupal_set_message(t('The disabled strings have been removed.'));
       break;
   }
 }
@@ -148,22 +151,46 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $context = '
     '#type' => 'checkbox',
     '#default_value' => ($enabled == -1) ? TRUE : $enabled,
     '#access' => $enabled != -1, // Have access if it's not a placeholder value
-  );
-  $form['context'] = array(
-    '#type' => 'textfield',
-    '#default_value' => $context,
-    '#size' => 20,
-    '#maxlength' => 255,
+    '#attributes' => array(
+      'title' => t('Flag whether this override should be active.'),
+    ),
   );
   $form['source'] = array(
     '#type' => 'textarea',
     '#default_value' => $source,
     '#rows' => 1,
+    '#attributes' => array(
+      'title' => t('The original source text to be replaced.'),
+    ),
   );
   $form['translation'] = array(
     '#type' => 'textarea',
     '#default_value' => $translation,
     '#rows' => 1,
+    '#attributes' => array(
+      'title' => t('The text to replace the original source text.'),
+    ),
+    // Hide the translation when the source is empty.
+    '#states' => array(
+      'invisible' => array(
+        "#edit-string-$delta-source" => array('empty' => TRUE),
+      ),
+    ),
+  );
+  $form['context'] = array(
+    '#type' => 'textfield',
+    '#default_value' => $context,
+    '#size' => 5,
+    '#maxlength' => 255,
+    '#attributes' => array(
+      'title' => t('Strings sometimes can have context applied to them. Most cases, this is not the case.'),
+    ),
+    // Hide the context when the source is empty.
+    '#states' => array(
+      'invisible' => array(
+        "#edit-string-$delta-source" => array('empty' => TRUE),
+      ),
+    ),
   );
   return $form;
 }
@@ -179,9 +206,9 @@ function theme_stringoverrides_strings($variables) {
     $rows[$key] = array(
       'data' => array(
         array('data' => drupal_render($form[$key]['enabled']), 'class' => 'stringoverrides-enabled'),
-        array('data' => drupal_render($form[$key]['context']), 'class' => 'stringoverrides-context'),
         array('data' => drupal_render($form[$key]['source']), 'class' => 'stringoverrides-source'),
         array('data' => drupal_render($form[$key]['translation']), 'class' => 'stringoverrides-translation'),
+        array('data' => drupal_render($form[$key]['context']), 'class' => 'stringoverrides-context'),
       ),
     );
     // Add any attributes on the element to the row, such as the ahah class.
@@ -190,10 +217,10 @@ function theme_stringoverrides_strings($variables) {
     }
   }
   $header = array(
-    ($form[0]['enabled']['#access']) ? t('Enabled') : NULL,
-    t('Context'),
-    t('Original'),
-    t('Replacement'),
+    ($form[0]['enabled']['#access']) ? array('data' => t('Original'), 'title' => t('Flag whether the given override should be active.')) : NULL,
+    array('data' => t('Original'), 'title' => t('The original source text to be replaced.')),
+    array('data' => t('Replacement'), 'title' => t('The text to replace the original source text.')),
+    array('data' => t('Context'), 'title' => t('Some strings have context applied to them. In those cases, you can provide the context in this column.')),
   );
 
   $output = theme('table', array('header' => $header, 'rows' => $rows));
