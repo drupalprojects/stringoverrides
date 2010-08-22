@@ -26,6 +26,13 @@ function stringoverrides_admin() {
     $form['string'][$delta] = stringoverrides_textbox_combo($delta);
     $delta++;
   }
+  $form['language'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Language code'),
+    '#description' => t('The language code that appears in the <a href="@dirlang">language information and text direction</a> for the HTML document. Note that this cannot be "en", but something else. "en-US" is appropriate, but feel free to change it.', array('@dirlang' => 'http://www.w3.org/TR/1999/REC-html401-19991224/struct/dirlang.html#langcodes')),
+    '#default_value' => variable_get('stringoverrides_language', 'en-US'),
+    '#required' => TRUE,
+  );
 
   $form['save'] = array(
     '#type' => 'submit',
@@ -51,6 +58,9 @@ function stringoverrides_admin_submit($form_id, $form_values) {
 
   // Save into the English language definition
   variable_set('locale_custom_strings_en', $words);
+
+  // Save the language name
+  variable_set('stringoverrides_language', $form_values['language']);
 
   // Output a message to the user
   drupal_set_message(t('Your changes have been saved.'));

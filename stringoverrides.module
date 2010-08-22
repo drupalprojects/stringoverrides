@@ -102,9 +102,10 @@ function stringoverrides_enable() {
  */
 if (!function_exists('locale')) {
   function locale_supported_languages($reset = FALSE, $getall = FALSE) {
+    $language = variable_get('stringoverrides_language', 'en-US');
     return array(
-      'name' => array('xx' => 'String Overrides'),
-      'formula' => array('xx' => ''),
+      'name' => array($language => 'String Overrides'),
+      'formula' => array($language => ''),
     );
   }
 
