@@ -336,7 +336,7 @@ function stringoverrides_admin_export_submit($form, &$form_state) {
   $export = stringoverrides_admin_export_text($form_state['values']['lang']);
   drupal_set_header('Content-Length: '. strlen($export));
   echo $export;
-  $form_state['redirect'] = FALSE;
+  exit;
 }
 
 /**
