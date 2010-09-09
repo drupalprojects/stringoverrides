@@ -53,7 +53,7 @@ function stringoverrides_admin($form, $form_state, $lang = NULL) {
     $string_count = $form_state['string_count'];
   }
   else {
-    $string_count = count($strings) + 2;
+    $string_count = count($strings) + 1;
   }
 
   // Sort the strings and display them in the form
