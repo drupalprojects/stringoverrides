@@ -19,18 +19,16 @@ function stringoverrides_admin($form, $form_state, $lang = NULL) {
   // Setup the form
   $form['#cache'] = TRUE;
   $form['#attached']['css'][drupal_get_path('module', 'stringoverrides') . '/stringoverrides.css'] = array();
-  
   $form['lang'] = array(
     '#type' => 'hidden',
     '#value' => $lang,
   );
   $form['string'] = array(
     '#tree' => TRUE,
-    '#prefix' => '<div id="stringoverrides-wrapper">',
-    '#suffix' => '</div>',
     '#theme' => 'stringoverrides_strings',
   );
 
+  // Retrieve the string overrides from the variables table.
   $words = array(
     FALSE => variable_get("locale_custom_disabled_strings_$lang", array()),
     TRUE => variable_get("locale_custom_strings_$lang", array())
@@ -49,6 +47,8 @@ function stringoverrides_admin($form, $form_state, $lang = NULL) {
     }
   }
 
+  // See how many string rows there should be.
+  $string_count = 0;
   if (isset($form_state['string_count'])) {
     $string_count = $form_state['string_count'];
   }
@@ -223,7 +223,11 @@ function theme_stringoverrides_strings($variables) {
     array('data' => t('Context'), 'title' => t('Some strings have context applied to them. In those cases, you can provide the context in this column.')),
   );
 
-  $output = theme('table', array('header' => $header, 'rows' => $rows));
+  $output = theme('table', array(
+    'header' => $header,
+    'rows' => $rows,
+    'attributes' => array('id' => 'stringoverrides-wrapper'),
+  ));
   $output .= drupal_render_children($form);
   return $output;
 }
@@ -231,7 +235,7 @@ function theme_stringoverrides_strings($variables) {
 /**
  * Menu callback for the String Overrides module to display a new string override
  */
-function stringoverrides_ajax($form, $form_state) {
+function stringoverrides_ajax($form, &$form_state) {
   return $form['string'];
 }
 
@@ -240,6 +244,7 @@ function stringoverrides_ajax($form, $form_state) {
  */
 function stringoverrides_more_strings_submit($form, &$form_state) {
   $form_state['string_count'] = count($form_state['values']['string']) + 1;
+  $form_state['rebuild'] = TRUE;
 }
 
 /**
