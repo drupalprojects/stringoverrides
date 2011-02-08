@@ -5,3 +5,5 @@ core = 7.x
 files[] = stringoverrides.module
 files[] = stringoverrides.install
 files[] = stringoverrides.admin.inc
+
+configure = admin/config/regional/stringoverrides
