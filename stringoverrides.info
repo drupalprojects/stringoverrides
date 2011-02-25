@@ -1,4 +1,3 @@
-; $Id$
 name = String Overrides
 description = Provides a quick and easy way of replacing text.
 core = 6.x
