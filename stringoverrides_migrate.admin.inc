@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Menu callback for the String Overrides Migrate module to display the import administration

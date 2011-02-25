@@ -1,4 +1,3 @@
-; $Id$
 name = String Overrides Migrate
 description = Tools for importing and exporting string override settings.
 dependencies[] = stringoverrides
