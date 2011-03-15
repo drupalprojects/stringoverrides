@@ -96,7 +96,7 @@ function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $original = 
  * Theme the enabled box and the two text box strings
  */
 function theme_stringoverrides_strings($form) {
-  drupal_add_css(drupal_get_path('module', 'stringoverrides') .'/stringoverrides.css', 'module', NULL, NULL, FALSE);
+  drupal_add_css(drupal_get_path('module', 'stringoverrides') .'/stringoverrides.css', 'module', NULL, FALSE);
 
   $headers = array(
     theme('table_select_header_cell'),
