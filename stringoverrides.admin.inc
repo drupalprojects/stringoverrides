@@ -17,7 +17,7 @@ function stringoverrides_admin($form, $form_state, $lang = NULL) {
 
   // Setup the form
   $form['#cache'] = TRUE;
-  $form['#attached']['css'][drupal_get_path('module', 'stringoverrides') . '/stringoverrides.css'] = array();
+  $form['#attached']['css'][drupal_get_path('module', 'stringoverrides') . '/stringoverrides.admin.css'] = array();
   $form['lang'] = array(
     '#type' => 'hidden',
     '#value' => $lang,
@@ -55,7 +55,7 @@ function stringoverrides_admin($form, $form_state, $lang = NULL) {
     $string_count = count($strings) + 1;
   }
 
-  // Sort the strings and display them in the form
+  // Sort the strings and display them in the form.
   usort($strings, 'stringoverrides_admin_word_sort');
   for ($index = 0; $index < $string_count; $index++) {
     if (isset($strings[$index])) {
@@ -67,7 +67,7 @@ function stringoverrides_admin($form, $form_state, $lang = NULL) {
     }
   }
 
-  // Add the buttons to the form
+  // Add the buttons to the form.
   $form['actions'] = array(
     '#type' => 'container',
     '#attributes' => array('class' => array('form-actions', 'container-inline')),
@@ -100,7 +100,7 @@ function stringoverrides_admin($form, $form_state, $lang = NULL) {
 }
 
 /**
- * Triggered when the user submits the administration page
+ * Triggered when the user submits the administration page.
  */
 function stringoverrides_admin_submit($form, &$form_state) {
   if (!in_array($form_state['clicked_button']['#id'], array('edit-save', 'edit-remove'))) {
@@ -108,7 +108,7 @@ function stringoverrides_admin_submit($form, &$form_state) {
     return;
   }
 
-  // Format the words correctly so that they're put into the database correctly
+  // Format the words correctly so that they're put into the database correctly.
   $words = array(FALSE => array(), TRUE => array());
   foreach ($form_state['values']['string'] as $index => $string) {
     if (!empty($string['source'])) {
@@ -119,7 +119,7 @@ function stringoverrides_admin_submit($form, &$form_state) {
     }
   }
 
-  // Save into the correct language definition
+  // Save into the correct language definition.
   $lang = $form['lang']['#value'];
   if (empty($lang)) {
     global $language;
@@ -127,7 +127,7 @@ function stringoverrides_admin_submit($form, &$form_state) {
   }
   variable_set("locale_custom_strings_$lang", $words[1]);
 
-  // Save the values and display a message to the user depend
+  // Save the values and display a message to the user depend.
   switch ($form_state['clicked_button']['#id']) {
     case 'edit-save':
       variable_set("locale_custom_disabled_strings_$lang", $words[0]);
@@ -142,14 +142,15 @@ function stringoverrides_admin_submit($form, &$form_state) {
 }
 
 /**
- * Function to return a textbox combo form
+ * Function to return a textbox combo form.
  */
 function stringoverrides_textbox_combo($delta = 0, $enabled = TRUE, $context = '', $source = '', $translation = '') {
   $form['#tree'] = TRUE;
   $form['enabled'] = array(
     '#type' => 'checkbox',
     '#default_value' => ($enabled == -1) ? TRUE : $enabled,
-    '#access' => $enabled != -1, // Have access if it's not a placeholder value
+    // Have access if it's not a placeholder value.
+    '#access' => $enabled != -1,
     '#attributes' => array(
       'title' => t('Flag whether this override should be active.'),
     ),
@@ -232,14 +233,14 @@ function theme_stringoverrides_strings($variables) {
 }
 
 /**
- * Menu callback for the String Overrides module to display a new string override
+ * Menu callback; Display a new string override.
  */
 function stringoverrides_ajax($form, &$form_state) {
   return $form['string'];
 }
 
 /**
- * Submit handler for the "Add row" button.
+ * Submit handler; The "Add row" button.
  */
 function stringoverrides_more_strings_submit($form, &$form_state) {
   $form_state['string_count'] = count($form_state['values']['string']) + 1;
