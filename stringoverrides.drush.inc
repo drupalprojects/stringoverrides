@@ -10,70 +10,60 @@
  */
 function stringoverrides_drush_command() {
   $items['stringoverrides-list'] = array(
-    'callback' => 'stringoverrides_drush_list',
-    'description' => dt('List all the string overrides associated with the site.'),
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+    'description' => 'List all the string overrides associated with the site.',
     'options' => array(
-      'language' => dt('The language for the available overrides. Defaults to "en".'),
+      'language' => 'The language for the available overrides. Defaults to "en".',
     ),
     'examples' => array(
-      'drush stringoverrides-list' => dt('Lists all string overrides on the site.'),
-      'drush stringoverrides-list --language fr' => dt('Lists all French string overrides on the site.'),
+      'drush stringoverrides-list' => 'Lists all string overrides on the site.',
+      'drush stringoverrides-list --language fr' => 'Lists all French string overrides on the site.',
     ),
-    'core' => array(7 => 7),
+    'core' => array(7, 8),
   );
   $items['stringoverrides-set'] = array(
-    'callback' => 'stringoverrides_drush_set',
-    'description' => dt('Set a string override for the site.'),
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+    'description' => 'Set a string override for the site.',
     'arguments' => array(
-      'original' => dt('The original source text to override. Defaults to "en".'),
-      'replacement' => dt('The replacement text.'),
+      'original' => 'The original source text to override. Defaults to "en".',
+      'replacement' => 'The replacement text.',
     ),
     'options' => array(
-      'language' => dt('The language for the override. Defaults to "en".'),
-      'context' => dt('The context for the desired override. Defaults to "".'),
+      'language' => 'The language for the override. Defaults to "en".',
+      'context' => 'The context for the desired override. Defaults to "".',
     ),
-    'core' => array(7 => 7),
+    'core' => array(7, 8),
   );
   $items['stringoverrides-remove'] = array(
-    'callback' => 'stringoverrides_drush_remove',
-    'description' => dt('Removes a string override from the system.'),
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+    'description' => 'Removes a string override from the system.',
     'arguments' => array(
-      'original' => dt('The original source text to override. Defaults to "en".'),
+      'original' => 'The original source text to override. Defaults to "en".',
     ),
     'options' => array(
-      'language' => dt('The language for the override. Defaults to "en".'),
-      'context' => dt('The context for the desired override. Defaults to "".'),
+      'language' => 'The language for the override. Defaults to "en".',
+      'context' => 'The context for the desired override. Defaults to "".',
     ),
-    'core' => array(7 => 7),
+    'core' => array(7, 8),
   );
   $items['stringoverrides-enable'] = array(
-    'callback' => 'stringoverrides_drush_enable',
-    'description' => dt('Enables the given string override.'),
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+    'description' => 'Enables the given string override.',
     'arguments' => array(
-      'original' => dt('The original source text of the override.'),
+      'original' => 'The original source text of the override.',
     ),
     'options' => array(
-      'language' => dt('The language for the override. Defaults to "en".'),
-      'context' => dt('The context for the desired override. Defaults to "".'),
+      'language' => 'The language for the override. Defaults to "en".',
+      'context' => 'The context for the desired override. Defaults to "".',
     ),
-    'core' => array(7 => 7),
+    'core' => array(7, 8),
   );
   $items['stringoverrides-disable'] = array(
-    'callback' => 'stringoverrides_drush_disable',
-    'description' => dt('Disables the given String Override.'),
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+    'description' => 'Disables the given String Override.',
     'arguments' => array(
-      'original' => dt('The original source text of the override.'),
+      'original' => 'The original source text of the override.',
     ),
     'options' => array(
-      'language' => dt('The language for the override. Defaults to "en".'),
-      'context' => dt('The context for the desired override. Defaults to "".'),
+      'language' => 'The language for the override. Defaults to "en".',
+      'context' => 'The context for the desired override. Defaults to "".',
     ),
-    'core' => array(7 => 7),
+    'core' => array(7, 8),
   );
   return $items;
 }
@@ -99,7 +89,7 @@ function stringoverrides_drush_help($section) {
 /**
  * Drush Callback; Lists all the String Overrides.
  */
-function stringoverrides_drush_list() {
+function drush_stringoverrides_list() {
   // Load the administration interface for API dependencies.
   module_load_include('inc', 'stringoverrides', 'stringoverrides.admin');
   $strings = array();
@@ -150,7 +140,7 @@ function stringoverrides_drush_list() {
 /**
  * Drush Callback; Set a String Overrides.
  */
-function stringoverrides_drush_set($original, $replacement) {
+function drush_stringoverrides_set($original, $replacement) {
   // Get the available options.
   $language = drush_get_option('language', 'en');
   $context = drush_get_option('context', '');
@@ -165,7 +155,7 @@ function stringoverrides_drush_set($original, $replacement) {
 /**
  * Drush Callback; Enable a String Override.
  */
-function stringoverrides_drush_enable($original) {
+function drush_stringoverrides_enable($original) {
   // Get the available options.
   $language = drush_get_option('language', 'en');
   $context = drush_get_option('context', '');
@@ -191,7 +181,7 @@ function stringoverrides_drush_enable($original) {
 /**
  * Drush Callback; Disable a String Override.
  */
-function stringoverrides_drush_disable($original) {
+function drush_stringoverrides_disable($original) {
   // Get the available options.
   $language = drush_get_option('language', 'en');
   $context = drush_get_option('context', '');
@@ -217,7 +207,7 @@ function stringoverrides_drush_disable($original) {
 /**
  * Drush Callback; Removes a String Override.
  */
-function stringoverrides_drush_remove($original) {
+function drush_stringoverrides_remove($original) {
   // Get the available options.
   $language = drush_get_option('language', 'en');
   $context = drush_get_option('context', '');
