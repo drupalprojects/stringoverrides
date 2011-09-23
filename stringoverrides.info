@@ -4,5 +4,6 @@ core = 7.x
 files[] = stringoverrides.module
 files[] = stringoverrides.install
 files[] = stringoverrides.admin.inc
+files[] = stringoverrides.drush.inc
 
 configure = admin/config/regional/stringoverrides
