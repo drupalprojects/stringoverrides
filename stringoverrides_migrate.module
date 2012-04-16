@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Stringoverride main module.
+ */
 
 /**
  * Implement hook_help().

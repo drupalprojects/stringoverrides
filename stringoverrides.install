@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Stringoverride install.
+ */
 
 /**
  * Implements hook_uninstall().
@@ -33,5 +37,4 @@ function stringoverrides_update_7000() {
     // Save the value back into the variables table with the context support.
     variable_set($variable->name, array('' => $overrides));
   }
-  return $ret;
 }
