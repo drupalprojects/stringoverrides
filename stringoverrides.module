@@ -79,10 +79,10 @@ function stringoverrides_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
   );
-  
+
   // Add the language tabs if there are other languages
   if (module_exists('locale')) {
-    global $language;
+    $language = language_default();
     $languages = locale_language_list();
     foreach ($languages as $code => $name) {
       $items["admin/settings/stringoverrides/$code"] = array(
@@ -104,7 +104,7 @@ function stringoverrides_menu() {
       'file' => 'stringoverrides.admin.inc',
     );
   }
-  
+
   $items['admin/settings/stringoverrides/js'] = array(
     'title' => 'String Overrides Javascript',
     'page callback' => 'stringoverrides_js',

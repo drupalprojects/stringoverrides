@@ -11,7 +11,7 @@
 function stringoverrides_admin($form_state = NULL, $lang = NULL) {
   // See which language we're modifying
   if (empty($lang)) {
-    global $language;
+    $language = language_default();
     $lang = $language->language;
   }
 
@@ -93,7 +93,7 @@ function stringoverrides_admin_submit($form, &$form_state) {
   // Save into the correct language definition
   $lang = $form['lang']['#value'];
   if (empty($lang)) {
-    global $language;
+    $language = language_default();
     $lang = $language->language;
   }
   variable_set('locale_custom_strings_'. $lang, $words[1]);
