@@ -5,5 +5,6 @@ files[] = stringoverrides.module
 files[] = stringoverrides.install
 files[] = stringoverrides.admin.inc
 files[] = stringoverrides.drush.inc
+files[] = stringoverrides.test
 
 configure = admin/config/regional/stringoverrides
