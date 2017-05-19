@@ -1,0 +1,5 @@
+services:
+  string_translator.stringoverrides:
+    class: Drupal\stringoverrides\StringOverridesTranslation
+    tags:
+      - { name: string_translator, priority: 15 }

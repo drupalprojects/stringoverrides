@@ -1,0 +1,4 @@
+name: String Overrides
+type: module
+description: 'Provides a quick and easy way of replacing text.'
+core: 8.x
