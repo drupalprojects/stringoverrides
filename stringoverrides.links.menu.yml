@@ -1,0 +1,6 @@
+stringoverrides.translations_form:
+  title: 'String Overrides'
+  route_name: stringoverrides.translations_form.default
+  description: 'Provides a quick and easy way of replacing text.'
+  parent: system.admin_config_regional
+

@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function stringoverrides_uninstall() {
+  // Remove all stored string replacements.
+  $config_factory = \Drupal::service('config.factory');
+  $config_names = $config_factory->listAll('stringoverrides.string_override.');
+  foreach ($config_names as $config_name) {
+    $config = $config_factory->getEditable($config_name);
+    $config->delete();
+  }
+}

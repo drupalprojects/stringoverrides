@@ -15,33 +15,30 @@ use Drupal\Core\StringTranslation\Translator\StaticTranslation;
 class StringOverridesTranslation extends StaticTranslation {
 
   /**
-   * Constructs a StringOverridesTranslation object.
-   */
-  public function __construct() {
-    parent::__construct();
-  }
-
-  /**
    * {@inheritdoc}
    */
   protected function getLanguage($langcode) {
-    // This is just a dummy implementation.
-    // @todo Replace this data.
-    return array(
-      '' => array(
-        'Home' => 'House Of The Rising Sun',
-        'Content' => 'Woodstock',
-        'Structure' => 'Bridge Over Troubled Water',
-        'Appearance' => 'Lucy In The Sky With Diamonds',
-        'Extend' => 'Stairway To Heaven',
-        'Configuration' => 'Private Investigations',
-        'People' => 'Suspicious Minds',
-        'Reports' => 'Paranoid',
-        'Help' => 'Help!',
-        'My account' => 'I Me Mine',
-        'Log out' => 'Go Now',
-      ),
-    );
+    $cid = 'stringoverides:translation_for_' . $langcode;
+
+    if ($cache = \Drupal::cache()->get($cid)) {
+      return $cache->data;
+    }
+    else {
+      $translations = [];
+      // Drupal configuration array structure is different from translations
+      // array structure, lets transform configuration array.
+      $config = \Drupal::config('stringoverrides.string_override.' . $langcode);
+      $contexts = $config->get('contexts');
+      if (!empty($contexts)) {
+        foreach ($contexts as $context) {
+          foreach ($context['translations'] as $word) {
+            $translations[$context['context']][$word['source']] = $word['translation'];
+          }
+        }
+      }
+      \Drupal::cache()->set($cid, $translations);
+      return $translations;
+    }
   }
 
 }

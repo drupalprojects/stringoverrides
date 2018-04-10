@@ -1,0 +1,6 @@
+<?php
+
+/**
+ * @file
+ * Configuration interface to provide a quick and easy way of replacing text.
+ */

@@ -1,0 +1,27 @@
+stringoverrides.string_override.*:
+  type: config_object
+  label: 'String Overrides Language'
+  mapping:
+    contexts:
+      type: sequence
+      label: 'Contexts'
+      sequence:
+        type: mapping
+        label: 'Context'
+        mapping:
+          context:
+            type: string
+            label: 'Context name'
+          translations:
+            type: sequence
+            label: 'Translations'
+            sequence:
+              type: mapping
+              label: 'Translation'
+              mapping:
+                source:
+                  type: string
+                  label: 'Source'
+                translation:
+                  type: string
+                  label: 'Translation'
